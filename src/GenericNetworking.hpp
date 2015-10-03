@@ -6,24 +6,23 @@ using namespace std;
 enum position { LISTEN, CONNECT };
 
 class GenericNetworking {
-	// variables
-	int				_fd;
+/*	// Alpha5 :: obsolete?
 	vector<string>	rbuf;
 	vector<string>	wbuf;
+*/
 
-//	position	__mode; // it is already determined
-
-	// synchronous control
-	void * 	_write		(void *);
-	void * 	_read		(void *);
-	// 
+	// #Alpha5
 	int _connect(int port, char *address);
 	int _listen(int port, char *address);
+	// 
+	int _fd;
+	// 
+	string	__read();
+//	int		__write();
+	int		__flush_write(string *);
 public:
 	GenericNetworking(position __mode, int port, char *address);
-	// 1. Chat!
-	string __read();
-	int __write();
-	// 2. Text
-	// 3. Binary
+	string	__select(string io);
+	string	flush_read();
+	int		flush_write();
 };

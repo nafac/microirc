@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
 	pthread_t thread_id[4096];
 	// expandable built-in modules configuration. see above.
 	moduleconf args;
+	// #Alpha5TODO :: attempt to vectorize thread container.
+	// 
 	// The Communication Hub
 	args.name		= COMMUNICATION_HUB;
 	pthread_create(&(thread_id[0]), NULL, &thread_dispatcher, (void *)&args);
@@ -39,7 +41,7 @@ int main(int argc, char **argv) {
 	args.name		= IRC_CLIENT;
 	args.address	= (char *)"irc.quakenet.org";
 	args.port		= 6667;
-	pthread_create(&(thread_id[2]), NULL, &thread_dispatcher, (void *)&args);
+	pthread_create(&(thread_id[2]), NULL, &thread_dispatcher, (void *)&args);	
 	sleep(1);
 	//// Freenode TODO: The supersecret handshake is not working, yet. I got more important things to do meanwhile.
 /*
@@ -49,6 +51,12 @@ int main(int argc, char **argv) {
 	pthread_create(&(thread_id[3]), NULL, &thread_dispatcher, (void *)&args);
 	sleep(1);
 */
+	args.name		= IRC_SERVER;
+	args.address	= (char *)"0.0.0.0";
+	args.port		= 6668;
+	pthread_create(&(thread_id[4]), NULL, &thread_dispatcher, (void *)&args);
+
+										
 	// debugging..
 	//GenericNetworking *nio = new GenericNetworking(CONNECT, 6669, (char *)"127.0.0.1");
 

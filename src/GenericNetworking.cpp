@@ -1,11 +1,11 @@
 // #Alpha5 :: Chaos Communication Server 2015
 // ..it basically just connects everything to the main "hub".
 #include "GenericNetworking.hpp"
-// yuck
-#include <iostream>
+#include "Toolbox.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -21,9 +21,69 @@ GenericNetworking::GenericNetworking(position _mode, int port, char *address) {
 	if(_mode == LISTEN)
 		_listen(port, address);
 }
-// #Alpha5 :: private functions
-// #Alpha5 :: This function does not block, is good.
+// #Alpha5 :: this is awesome
+string GenericNetworking::__select(string io) {
+	struct timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 32;
+
+	fd_set set;
+	FD_ZERO(&set);
+	FD_SET(_fd, &set);
+	
+	int rv = select(_fd + 1, &set, NULL, NULL, &timeout);
+	if(rv == -1) {
+		printf("select(%i) returned -1, closing socket. I should propably reconnect ASAP..\n", _fd);
+		close(_fd); // #Alpha5TODO :: reconnect
+		return -1;
+	} else if(rv == 0) {
+		__flush_write(&io);
+		return 0;
+	} else if(rv > 0) {
+		printf("select(%i) returned >1, reading ..\n", _fd);
+		__read();
+		return 1;
+	}
+	return 0; // ahh, but this is important.
+}
+// #Alpha5 :: private area
+string GenericNetworking::__read(void) {
+	// #Alpha4 :: Yet Another Container.
+	//	.. conclusion, C software is memory insecure, and coding secure C++ software takes time.
+	//	.. should propably just code Java or C#, but that is for pussies and I like our memories.
+	//	.. voodoo bits, woohoo.
+	// #Alpha4 :: This class is serving InternetRelayChat();
+	//InternetRelayChat IOS = InternetRelayChat();
+	int len = 2048;
+	char buf[len];
+	string commands;
+
+	bzero(buf, len);
+	read(_fd, buf, len);
+	commands = string(buf, len + 1);
+
+	printf("__read() returned %s\n", buf);
+	return commands;
+}
+int GenericNetworking::__flush_write(string *write_buffer) {
+	Toolbox *box = new Toolbox();
+	vector<string> write_buffer_list;
+	int i;
+	// split lines
+	write_buffer_list = box->explode(write_buffer, "\n");
+	// write everything to socket, at instant.
+	for(i = 0; i < write_buffer_list.size(); i++) {
+		if(write(_fd, "PONG\n\r", 7) < 0)
+			printf("Failed to write PONG to fd:%i\n", _fd);
+		else
+			printf("Successfully wrote PONG to fd:%i\n", _fd);
+	}
+	// reset I/O pointer
+	write_buffer = (string)"\n\r";
+	return 0;
+}
 int GenericNetworking::_connect(int port, char *address) {
+	// This function does not block, is good.
 	struct hostent			*resolver;
 	struct sockaddr_in	serv_addr;
 
@@ -35,7 +95,7 @@ int GenericNetworking::_connect(int port, char *address) {
 
 	resolver = gethostbyname(address);
 	if(resolver == NULL) {
-		cout << "failed to retrieve resolver!!" << endl;
+		printf("Failed to get resolver.\n");
 		return 1;
 	}
 
@@ -45,7 +105,7 @@ int GenericNetworking::_connect(int port, char *address) {
 	serv_addr.sin_port	= htons(port);
 
 	if(connect(_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		cout << "failed to connect!!" << endl;
+		printf("Failed to connect.\n");
 		return 1;
 	}
 	//pthread_create(threadpool[0], NULL, _write, NULL);
@@ -55,6 +115,7 @@ int GenericNetworking::_connect(int port, char *address) {
 }
 // #Alpha5TODO :: This function blocks, it should not.
 int GenericNetworking::_listen(int port, char *address) {
+	// This function does block, no good.
 	int newsockfd;
 	socklen_t clilen;
 	struct sockaddr_in serv_addr, cli_addr;
