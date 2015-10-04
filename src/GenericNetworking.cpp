@@ -30,21 +30,22 @@ string GenericNetworking::__select(string io) {
 	fd_set set;
 	FD_ZERO(&set);
 	FD_SET(_fd, &set);
+
+	// always flush
+	__flush_write(io);
 	
 	int rv = select(_fd + 1, &set, NULL, NULL, &timeout);
 	if(rv == -1) {
 		printf("select(%i) returned -1, closing socket. I should propably reconnect ASAP..\n", _fd);
-		close(_fd); // #Alpha5TODO :: reconnect
-		return -1;
+		close(_fd);
+		// #Alpha5TODO :: reconnect
 	} else if(rv == 0) {
-		__flush_write(&io);
-		return 0;
+		//__flush_write(io);
 	} else if(rv > 0) {
-		printf("select(%i) returned >1, reading ..\n", _fd);
-		__read();
-		return 1;
+		//printf("debug: select(%i) returned >1, reading ..\n", _fd);
+		return __read();
 	}
-	return 0; // ahh, but this is important.
+	return "\n\r"; // ahh, but this is important.
 }
 // #Alpha5 :: private area
 string GenericNetworking::__read(void) {
@@ -62,26 +63,37 @@ string GenericNetworking::__read(void) {
 	read(_fd, buf, len);
 	commands = string(buf, len + 1);
 
-	printf("__read() returned %s\n", buf);
+	//printf("debug: __read() returned %s\n", buf);
 	return commands;
 }
-int GenericNetworking::__flush_write(string *write_buffer) {
+// __flush_write()
+int GenericNetworking::__flush_write(string buf) {
+	int i, rv;
 	Toolbox *box = new Toolbox();
-	vector<string> write_buffer_list;
-	int i;
-	// split lines
-	write_buffer_list = box->explode(write_buffer, "\n");
-	// write everything to socket, at instant.
-	for(i = 0; i < write_buffer_list.size(); i++) {
-		if(write(_fd, "PONG\n\r", 7) < 0)
-			printf("Failed to write PONG to fd:%i\n", _fd);
-		else
-			printf("Successfully wrote PONG to fd:%i\n", _fd);
-	}
-	// reset I/O pointer
-	write_buffer = (string)"\n\r";
+	vector<string>	commands;
+	commands = box->explode(buf, "\n");
+
+	for(i = 0; i < commands.size(); i++)
+		rv = __flush_write_sub(commands[i].c_str(), commands[i].size() + 1);
+
 	return 0;
 }
+int GenericNetworking::__flush_write_sub(const char *text, int text_size) {
+	if(text_size <= 3)
+		return 0;
+
+	//printf("__flush_write_sub length=%i\n", text_size);
+
+	int rv = write(_fd, text, text_size);
+
+	if(rv < 0)
+		printf("__flush_write_sub FAIL'd :: %s\n", text);
+	else
+		printf("__flush_write_sub SUCC'd :: %s\n", text);
+
+	return 0;
+}
+// #Alpha5 :: connection management
 int GenericNetworking::_connect(int port, char *address) {
 	// This function does not block, is good.
 	struct hostent			*resolver;
@@ -108,12 +120,10 @@ int GenericNetworking::_connect(int port, char *address) {
 		printf("Failed to connect.\n");
 		return 1;
 	}
-	//pthread_create(threadpool[0], NULL, _write, NULL);
-	//pthread_create(threadpool[1], NULL, _read, NULL);
+
 	printf("Connected @ %s:%i\n", address, port);
 	return 0;
 }
-// #Alpha5TODO :: This function blocks, it should not.
 int GenericNetworking::_listen(int port, char *address) {
 	// This function does block, no good.
 	int newsockfd;
@@ -148,15 +158,22 @@ int GenericNetworking::_listen(int port, char *address) {
 
 	while(1) {
 		printf("ticking..\n");
+
 		listen(_fd, 8);
+
 		clilen = sizeof(cli_addr);
+
 		newsockfd = accept(_fd, (struct sockaddr *)&cli_addr, &clilen); // #Alpha5 TODO :: do arrays
 		if(newsockfd < 0) {
 			printf("%i: failed to accept socket\n", __LINE__);
 			continue;
 		}
 
+		printf("Adding newsockfd=%i to clientfds\n", newsockfd);
+		clientfds.push_back(newsockfd);
+
 		//
+/*
 		bzero(buffer, 256);
 		n = read(newsockfd, buffer, 255);
 		if(n < 0) {
@@ -170,6 +187,7 @@ int GenericNetworking::_listen(int port, char *address) {
 			close(newsockfd);
 			continue;
 		}
+*/
 	}
 	close(newsockfd);
 	close(_fd);
