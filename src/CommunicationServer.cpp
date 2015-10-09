@@ -2,6 +2,7 @@
 #include "CommunicationServer.hpp"
 #include "GenericNetworking.hpp"
 #include <stdio.h>
+#include <unistd.h>
 
 CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
 	printf("CommunicationServer IPC Hub initialized.\n");
@@ -12,5 +13,6 @@ CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
 	// 3. one could encrypt all inter process traffic for added extra fun..
 
 	// 2. dispatch
-	
+	while(1) { printf("debug: CommunicationServer ticking.. it should not..\n"); sleep(30); }
 }
+

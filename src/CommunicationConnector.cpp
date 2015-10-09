@@ -12,10 +12,10 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 	if(conf->name == IRC_LIB) {
 		//printf("CommunicationConnector(IRC_LIB) created..\n");
 
-		GenericNetworking *inter_server = new GenericNetworking(CONNECT, 6669, (char *)"127.0.0.1");
-		GenericIRC *irc_server = new GenericIRC(); // make these easily spawnable.
+		GenericNetworking *hub = new GenericNetworking(CONNECT, 6669, (char *)"127.0.0.1");
+		GenericIRC *irc = new GenericIRC(); // make these easily spawnable.
 
-		while(1) { io = irc_server->feed(inter_server->__select(io)); }
+		while(1) { io = irc->feed(hub->__select(io)); }
 	} else if(conf->name == IRC_CLIENT) {
 		//printf("CommunicationConnector(IRC_CLIENT) created..\n");
 

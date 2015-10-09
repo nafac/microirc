@@ -22,6 +22,7 @@ GenericNetworking::GenericNetworking(position _mode, int port, char *address) {
 		_listen(port, address);
 }
 // #Alpha5 :: this is awesome
+// .. wait, no it's not.
 string GenericNetworking::__select(string io) {
 	struct timeval timeout;
 	timeout.tv_sec = 0;
@@ -124,6 +125,7 @@ int GenericNetworking::_connect(int port, char *address) {
 	printf("Connected @ %s:%i\n", address, port);
 	return 0;
 }
+// #Alpha5 :: this is not a generic function, only serves the hub
 int GenericNetworking::_listen(int port, char *address) {
 	// This function does block, no good.
 	int newsockfd;
@@ -157,7 +159,7 @@ int GenericNetworking::_listen(int port, char *address) {
 	printf("Listener alive @ %s:%i\n", address, port);
 
 	while(1) {
-		printf("ticking..\n");
+		printf("debug: listener ticking..\n");
 
 		listen(_fd, 8);
 
@@ -171,6 +173,8 @@ int GenericNetworking::_listen(int port, char *address) {
 
 		printf("Adding newsockfd=%i to clientfds\n", newsockfd);
 		clientfds.push_back(newsockfd);
+
+		
 
 		//
 /*
