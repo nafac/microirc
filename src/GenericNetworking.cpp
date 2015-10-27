@@ -21,33 +21,6 @@ GenericNetworking::GenericNetworking(position _mode, int port, char *address) {
 	if(_mode == LISTEN)
 		_listen(port, address);
 }
-// #Alpha5 :: this is awesome
-// .. wait, no it's not.
-string GenericNetworking::__select(string io) {
-	struct timeval timeout;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 32;
-
-	fd_set set;
-	FD_ZERO(&set);
-	FD_SET(_fd, &set);
-
-	// always flush
-	__flush_write(io);
-	
-	int rv = select(_fd + 1, &set, NULL, NULL, &timeout);
-	if(rv == -1) {
-		printf("select(%i) returned -1, closing socket. I should propably reconnect ASAP..\n", _fd);
-		close(_fd);
-		// #Alpha5TODO :: reconnect
-	} else if(rv == 0) {
-		//__flush_write(io);
-	} else if(rv > 0) {
-		//printf("debug: select(%i) returned >1, reading ..\n", _fd);
-		return __read();
-	}
-	return "\n\r"; // ahh, but this is important.
-}
 // #Alpha5 :: private area
 string GenericNetworking::__read(void) {
 	// #Alpha4 :: Yet Another Container.
@@ -61,7 +34,7 @@ string GenericNetworking::__read(void) {
 	string commands;
 
 	bzero(buf, len);
-	read(_fd, buf, len);
+	read(active_id, buf, len);
 	commands = string(buf, len + 1);
 
 	//printf("debug: __read() returned %s\n", buf);
@@ -85,7 +58,7 @@ int GenericNetworking::__flush_write_sub(const char *text, int text_size) {
 
 	//printf("__flush_write_sub length=%i\n", text_size);
 
-	int rv = write(_fd, text, text_size);
+	int rv = write(active_id, text, text_size);
 
 	if(rv < 0)
 		printf("__flush_write_sub FAIL'd :: %s\n", text);
@@ -100,8 +73,8 @@ int GenericNetworking::_connect(int port, char *address) {
 	struct hostent			*resolver;
 	struct sockaddr_in	serv_addr;
 
-	_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(_fd < 0) {
+	active_id = socket(AF_INET, SOCK_STREAM, 0);
+	if(active_id < 0) {
 		printf("%i: failed to create socket\n", __LINE__);
 		return 1;
 	}
@@ -117,84 +90,117 @@ int GenericNetworking::_connect(int port, char *address) {
 	bcopy((char *)resolver->h_addr_list[0], (char *)&serv_addr.sin_addr.s_addr, resolver->h_length);
 	serv_addr.sin_port	= htons(port);
 
-	if(connect(_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+	if(connect(active_id, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
 		printf("Failed to connect.\n");
 		return 1;
 	}
 
 	printf("Connected @ %s:%i\n", address, port);
 	return 0;
+	
+	//#Alpha5r1 return data, loop it through a generic "interface".
 }
-// #Alpha5 :: this is not a generic function, only serves the hub
+// #Alpha5 :: this is not a generic function, it only serves the hub
 int GenericNetworking::_listen(int port, char *address) {
 	// This function does block, no good.
 	int newsockfd;
 	socklen_t clilen;
 	struct sockaddr_in serv_addr, cli_addr;
 
-	_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(_fd < 0) {
+	active_id = socket(AF_INET, SOCK_STREAM, 0);
+	if(active_id < 0) {
 		printf("%i: failed to create socket\n", __LINE__);
 		return 1;
 	}
 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);	// #Alpha5 TODO :: only accept local connections
-	serv_addr.sin_port = htons(port);
+	serv_addr.sin_family		= AF_INET;
+	serv_addr.sin_addr.s_addr	= htonl(INADDR_LOOPBACK);
+	serv_addr.sin_port			= htons(port);
 
 	int yes = 1;
-	setsockopt(_fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
-	setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	setsockopt(active_id, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
+	setsockopt(active_id, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
-	if(bind(_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+	if(bind(active_id, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
 		printf("%i: failed to bind socket\n", __LINE__);
 		return 1;
 	}
 
-	//
-	char buffer[256];
-	int n;
-
+	listener_id = active_id;
+	clientfds.push_back(listener_id);
+	listen(listener_id, 8);
 	printf("Listener alive @ %s:%i\n", address, port);
 
+	//#Alpha5r1
+	struct timeval timeout;
+	timeout.tv_sec	= 0;
+	timeout.tv_usec	= 32;
+	fd_set set;
+	int n = 0;
+	int rv = 0;
+	//#Alpha5r1_TODO :: invert selector functions ie. select without I/O..
 	while(1) {
-		printf("debug: listener ticking..\n");
-
-		listen(_fd, 8);
-
-		clilen = sizeof(cli_addr);
-
-		newsockfd = accept(_fd, (struct sockaddr *)&cli_addr, &clilen); // #Alpha5 TODO :: do arrays
-		if(newsockfd < 0) {
-			printf("%i: failed to accept socket\n", __LINE__);
-			continue;
+		//printf("Listener looping through clientfds..\n\r");
+		for(n = 0; n < clientfds.size(); n++) {
+			active_id = clientfds[n];
+			
+			FD_ZERO(&set);
+			FD_SET(active_id, &set);
+			
+			rv = select(clientfds[n] + 1, &set, NULL, NULL, &timeout);
+			if(rv == -1) {
+				printf("select(%i) returned -1, closing socket. I should propably reconnect ASAP..\n", active_id);
+				close(active_id);
+			} else if(rv == 0) {
+				//__flush_write(io);
+			} else if(rv > 0) {
+				if(clientfds[n] == listener_id) {
+					newsockfd = accept(listener_id, (struct sockaddr *)&cli_addr, &clilen);
+					if(newsockfd < 0) {
+						printf("%i: failed to accept socket\n\r", __LINE__);
+						continue;
+					}
+					printf("Adding newsockfd=%i to clientfds\n\r", newsockfd);
+					clientfds.push_back(newsockfd);
+				} else {
+					__read();
+				}
+			}
 		}
-
-		printf("Adding newsockfd=%i to clientfds\n", newsockfd);
-		clientfds.push_back(newsockfd);
-
-		
-
-		//
-/*
-		bzero(buffer, 256);
-		n = read(newsockfd, buffer, 255);
-		if(n < 0) {
-			printf("error reading on socket.. closing..\n");
-			close(newsockfd);
-			continue;
-		}
-		n = write(newsockfd, "I got your message", 18);
-		if(n < 0) {
-			printf("error writing on socket.. closing..\n");
-			close(newsockfd);
-			continue;
-		}
-*/
 	}
 	close(newsockfd);
-	close(_fd);
+	close(active_id);
 	printf("LISTEN FAILED\n");
 	return 0;
+}
+// #Alpha5 :: this is awesome
+// .. wait, no it's not.
+int GenericNetworking::__select_without_io() {
+	return 0;
+}
+string GenericNetworking::__select_transfer_io(string io) {
+	struct timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 32;
+
+	fd_set set;
+	FD_ZERO(&set);
+	FD_SET(active_id, &set);
+
+	// always flush
+	__flush_write(io);
+	
+	int rv = select(active_id + 1, &set, NULL, NULL, &timeout);
+	if(rv == -1) {
+		printf("select(%i) returned -1, closing socket. I should propably reconnect ASAP..\n", active_id);
+		close(active_id);
+		// #Alpha5TODO :: reconnect
+	} else if(rv == 0) {
+		//__flush_write(io);
+	} else if(rv > 0) {
+		//printf("debug: select(%i) returned >1, reading ..\n", active_id);
+		return __read();
+	}
+	return "\n\r"; // ahh, but this is important.
 }
