@@ -1,11 +1,12 @@
 #include "CommunicationConnector.hpp"
-#include "GenericNetworking.hpp"
 #include "GenericIRC.hpp"
+#include "GenericNetworking.hpp"
 #include "mirccd.hpp"
 #include <stdio.h>
 
-// client <=> client
-// router
+//#Alpha5r1 :: CommunicationConnector Point-to-Point Static Router.
+//	:: It WILL only route two server modules statically, mapping and routing is done in the CommunicationServer.
+//	:: client <=> client router.
 CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 	// (obsoleted) static router
 	int static_router_one, static_router_two, rv;
@@ -27,13 +28,14 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 		//#Alpha5r1 :: TODO :: implement
 		//while(1) { io = irc->feed(hub->__select_transfer_io(io)); }
 	} else if(conf->name == IRC_CLIENT) {
-		//printf("CommunicationConnector(IRC_CLIENT) created..\n");
-		GenericNetworking *interserver	= new GenericNetworking();	
-		GenericNetworking *ircserver	= new GenericNetworking();
-		static_router_one = interserver	->_connect(6669, (char *)"127.0.0.1");
-		static_router_two = ircserver	->_connect(conf->port, conf->address);
-		//printf("static_router_one=%i static_router_two=%i\n\r", static_router_one, static_router_two);
-		while(1) { io = ircserver->__connector_transfer_io(static_router_two, interserver->__connector_transfer_io(static_router_one, io)); }
+		router_one = new GenericNetworking();				// CommunicationConnector is plain network router, do process and thread spawning somewhere else.
+		router_one->_connect(6669, (char *)"127.0.0.1");
+		router_two = new GenericNetworking();
+		router_two->_connect(conf->port, conf->address);
+		static_route_io();									// This is the end of CommunicationConnector.
+		
+		//#Alpha5 :: obsolete
+		//while(1) { io = ircserver->__connector_transfer_io(static_router_two, interserver->__connector_transfer_io(static_router_one, io)); }
 
 		// BUG'd => my messages are written to sock but never reach CommunicationServer..
 
@@ -46,4 +48,15 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 			io = local_server->__select_transfer_io(intern_server->__select_transfer_io(io));
 		}
 	} */
+}
+//#Alpha5r1 :: Two Connections per Connector MAX!
+int CommunicationConnector::static_route_io() {
+	while(1) {
+		router_one->__connector_static_router(router_two->static_communication_router_fd, router_one->static_communication_router_fd);
+/*		// pökäle
+		io = router_one->__connector_transfer_io(io);
+		io = router_two->__connector_transfer_io(io);
+*/
+	}
+	return 0;
 }

@@ -55,7 +55,7 @@ int GenericNetworking::_connect(int port, char *address) {
 	printf("Connected @ %s:%i\n", address, port);
 	
 	//#Alpha5r3
-	//static_connector_router = fd;
+	static_communication_router_fd = fd;
 	clientfds.push_back(fd);
 	
 	//#Alpha5r1
@@ -63,6 +63,7 @@ int GenericNetworking::_connect(int port, char *address) {
 	
 	//#Alpha5r1 return data, loop it through a generic "interface".
 }
+/*
 int GenericNetworking::_listen(int port, char *address) {
 	int fd;
 	int newsockfd;
@@ -89,13 +90,15 @@ int GenericNetworking::_listen(int port, char *address) {
 		return -1;
 	}
 
-	listener_id = fd;
-	clientfds.push_back(listener_id);
+	listener_id = fd; // dumb specialty sockets..
 	listen(listener_id, 8);
 	printf("Listener alive @ %s:%i\n", address, port);
 
-	return 0;
+	//clientfds.push_back(listener_id);
+
+	return fd;
 }
+*/
 // #Alpha5r1 :: selectahz!!
 // 	>> return values -1 = disconnect, 0 = nothing, 1 = write, 2 = read
 
@@ -112,7 +115,9 @@ int GenericNetworking::__socket_state(int target_fd) {
 	FD_ZERO(&set);
 	FD_SET(target_fd, &set);
 	// nafac.co stateful blocks
-	return select(target_fd + 1, &set, NULL, NULL, &timeout);
+	int liaani = select(target_fd + 1, &set, NULL, NULL, &timeout);
+	//printf("__socket_state is looping on target_fd='%i' liaani='%i'\n\r", target_fd, liaani);
+	return liaani;
 }
 // dumb fruity loops
 int GenericNetworking::__server_select(int *active_fd) {
@@ -135,17 +140,23 @@ int GenericNetworking::__server_select(int *active_fd) {
 				__accept();
 				continue;
 			}
-			*active_fd = stateful_fd;
-			return rv;
 		}
+		*active_fd = stateful_fd;
+		return rv;
 	}
 	*active_fd = stateful_fd;
-	return -1;
+	return rv;
 }
 //#Alpha5r1 CommunicationConnector is a static router.
-string GenericNetworking::__connector_transfer_io(int static_connector_router, string io) {
-	__flush_write(static_connector_router, io);
-	return __flush_read(static_connector_router);
+// CommunicationConnector area!!
+// __connector_transfer_io(source, destination) is a static router for one direction!
+int GenericNetworking::__connector_static_router(int source, int destination) {
+	string io;
+	io = __flush_read(source);
+	__flush_write(destination, io);
+//	io = __flush_read(destination);
+//	__flush_write(source, io);
+	return 0;
 }
 int GenericNetworking::__flush_write(int active_id, string buf) {
 	int i, rv;
@@ -184,7 +195,7 @@ string GenericNetworking::__flush_read(int active_id) {
 	bzero(buf, len);
 	read(active_id, buf, len);
 	commands = string(buf, len + 1);
-	printf("__flush_read() return value='%s'\n\r", commands.c_str());
+	printf("__flush_read() return value=%s", commands.c_str());
 	return commands;
 }
 int GenericNetworking::__accept() {

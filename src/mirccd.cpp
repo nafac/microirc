@@ -1,6 +1,6 @@
 #include "CommunicationServer.hpp"
 #include "CommunicationConnector.hpp"
-#include "GenericNetworking.hpp"
+//#include "GenericNetworking.hpp"
 #include "mirccd.hpp"
 #include <pthread.h>
 #include <unistd.h>
