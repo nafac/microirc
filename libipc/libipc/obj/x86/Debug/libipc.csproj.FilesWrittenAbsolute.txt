@@ -1,0 +1,5 @@
+/media/edward/The Game/Creative/microirc/libipc/libipc/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/media/edward/The Game/Creative/microirc/libipc/libipc/bin/Debug/libipc.exe.mdb
+/media/edward/The Game/Creative/microirc/libipc/libipc/bin/Debug/libipc.exe
+/media/edward/The Game/Creative/microirc/libipc/libipc/obj/x86/Debug/libipc.exe
+/media/edward/The Game/Creative/microirc/libipc/libipc/obj/x86/Debug/libipc.exe.mdb
