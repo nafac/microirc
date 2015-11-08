@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace libipc
 {
@@ -7,7 +8,14 @@ namespace libipc
 		public static void Main (string[] args)
 		{
 			Console.WriteLine ("Chaos Server #Alpha5");
-			CommunicationServer communicationhub = new CommunicationServer ();
+			// 
+			CommunicationServer CommunicationHub = new CommunicationServer ();
+			Thread CommunicationHubThread = new Thread (CommunicationHub.loop);
+			CommunicationHubThread.Start ();
+			// 
+			CommunicationConnector CommunicationServer = new CommunicationConnector ();
+			Thread CommunicationConnectorThread = new Thread(CommunicationServer.loop);
+			CommunicationConnectorThread.Start ();
 		}
 	}
 }
