@@ -29,7 +29,7 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 		//while(1) { io = irc->feed(hub->__select_transfer_io(io)); }
 	} else if(conf->name == IRC_CLIENT) {
 		router_one = new GenericNetworking();				// CommunicationConnector is plain network router, do process and thread spawning somewhere else.
-		router_one->ConnectCommunicationhub(6669, (char *)"::1");
+		router_one->ConnectCommunicationhub();
 		router_two = new GenericNetworking();
 		router_two->_connect(conf->port, conf->address);
 		static_route_io();									// This is the end of CommunicationConnector.

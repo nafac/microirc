@@ -99,44 +99,9 @@ int GenericNetworking::ConnectCommunicationhub(void) {
 
 	printf("CommunicationServer connection alive.\n\r");
 
+	static_communication_router_fd = fd;
 	return fd;
 }
-/*
-int GenericNetworking::_listen(int port, char *address) {
-	int fd;
-	int newsockfd;
-	socklen_t clilen;
-	struct sockaddr_in serv_addr, cli_addr;
-
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(fd < 0) {
-		printf("%i: failed to create socket\n", __LINE__);
-		return -1;
-	}
-
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family		= AF_INET;
-	serv_addr.sin_addr.s_addr	= htonl(INADDR_LOOPBACK);
-	serv_addr.sin_port			= htons(port);
-
-	int yes = 1;
-	setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-
-	if(bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		printf("%i: failed to bind socket\n", __LINE__);
-		return -1;
-	}
-
-	listener_id = fd; // dumb specialty sockets..
-	listen(listener_id, 8);
-	printf("Listener alive @ %s:%i\n", address, port);
-
-	//clientfds.push_back(listener_id);
-
-	return fd;
-}
-*/
 // #Alpha5r1 :: selectahz!!
 // 	>> return values -1 = disconnect, 0 = nothing, 1 = write, 2 = read
 
@@ -201,12 +166,14 @@ int GenericNetworking::__flush_write(int active_id, string buf) {
 	Toolbox *box = new Toolbox();
 	vector<string>	commands;
 	commands = box->explode(buf, "\n");
-	for(i = 0; i < commands.size(); i++)
+	for(i = 0; i < commands.size(); i++) {
+		commands[i].append("\n\r");
 		rv = __flush_write_sub(active_id, commands[i].c_str(), commands[i].size() + 1);
+ 	}
 	return 0;
 }
 int GenericNetworking::__flush_write_sub(int active_id, const char *text, int text_size) {
-	if(text_size <= 3)
+	if(text_size <= 5)
 		return 0;
 	int rv = write(active_id, text, text_size);
 	if(rv < 0)
