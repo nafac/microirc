@@ -22,7 +22,7 @@ public:
 	GenericNetworking(); // Just call it.
 	//#Alpha5
 	int		_connect(int port, char *address);
-	int		ConnectCommunicationhub(void);
+	int		ConnectCommunicationhub();
 	//int		_listen(int port, char *address);
 
 	//#Alpha5r1
