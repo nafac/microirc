@@ -12,17 +12,17 @@ class GenericNetworking {
 	vector<int>	clientfds;
 //	fd_set		fds;			// unused?
 	//#Alpha5r1
-	string		__flush_read(int active_fd);
-	int			__flush_write(int active_fd, string io);
-	int			__flush_write_sub(int active_fd, const char *, int);
-	int			__accept();
+	string		__flush_read(int fd, string *rbuf);
+	int		__flush_write(int active_fd, string io);
+	int		__flush_write_sub(int active_fd, const char *, int);
+	int		__accept();
 	//#Alpha5r3
-	//int			static_connector_router;
+	//int		static_connector_router;
 public:
 	GenericNetworking(); // Just call it.
 	//#Alpha5
 	int		_connect(int port, char *address);
-	int		ConnectCommunicationhub();
+	int		ConnectCommunicationhub(void);
 	//int		_listen(int port, char *address);
 
 	//#Alpha5r1

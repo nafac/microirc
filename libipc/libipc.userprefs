@@ -1,10 +1,10 @@
 ﻿<Properties StartupItem="libipc/libipc.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="libipc/Standalone.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="libipc/CommunicationServer.cs">
     <Files>
-      <File FileName="libipc/Standalone.cs" Line="1" Column="1" />
-      <File FileName="libipc/CommunicationServer.cs" Line="1" Column="1" />
-      <File FileName="libipc/CommunicationConnector.cs" Line="2" Column="1" />
+      <File FileName="libipc/Standalone.cs" Line="15" Column="7" />
+      <File FileName="libipc/CommunicationServer.cs" Line="76" Column="6" />
+      <File FileName="libipc/CommunicationConnector.cs" Line="13" Column="4" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

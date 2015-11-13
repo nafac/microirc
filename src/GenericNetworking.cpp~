@@ -155,21 +155,29 @@ int GenericNetworking::__server_select(int *active_fd) {
 // __connector_transfer_io(source, destination) is a static router for one direction!
 int GenericNetworking::__connector_static_router(int source, int destination) {
 	string io;
-	io = __flush_read(source);
-	__flush_write(destination, io);
-//	io = __flush_read(destination);
-//	__flush_write(source, io);
+	// server => CommunicationHub
+	if(__flush_read(source, &io) > 2) __flush_write(destination, io);
 	return 0;
 }
 int GenericNetworking::__flush_write(int active_id, string buf) {
+	// This works
 	int i, rv;
 	Toolbox *box = new Toolbox();
 	vector<string>	commands;
 	commands = box->explode(buf, "\n");
 	for(i = 0; i < commands.size(); i++) {
-		commands[i].append("\n\r");
+		commands[i].append("\n");
 		rv = __flush_write_sub(active_id, commands[i].c_str(), commands[i].size() + 1);
  	}
+	__flush_write_sub(active_id, "\n\r<EOF>", 8);
+/*
+	// This is proto
+	if(commands.size() > 2) {
+		//printf("commands.size()=%i\n\r", commands.size());
+		//rv = __flush_write_sub(active_id, buf.c_str(), buf.size() + 1);
+		__flush_write_sub(active_id, "\n\r<EOF>", 8);
+	}
+*/
 	return 0;
 }
 int GenericNetworking::__flush_write_sub(int active_id, const char *text, int text_size) {
@@ -181,27 +189,43 @@ int GenericNetworking::__flush_write_sub(int active_id, const char *text, int te
 	else
 		printf("__flush_write_sub SUCC'd :: %s\n", text);
 	//printf("__flush_write_sub length=%i\n", text_size);
+	//memset(&text, 0, text_size -1);
 	return 0;
 }
 // #Alpha5 :: THESE BELOW ARE READY
-string GenericNetworking::__flush_read(int active_id) {
-	// #Alpha4 :: Yet Another Container.
-	//	.. conclusion, C software is memory insecure, and coding secure C++ software takes time.
-	//	.. should propably just code Java or C#, but that is for pussies and I like our memories.
-	//	.. voodoo bits, woohoo.
-	// #Alpha4 :: This class is serving InternetRelayChat();
-	//InternetRelayChat IOS = InternetRelayChat();
-	// my reads are always non-blocking
-	if(__socket_state(active_id) < 1)
-		return "\n\r";
+int GenericNetworking::__flush_read(int fd, string *rbuf) {
+	/*
+	 * #Alpha4 :: Yet Another Container.
+	 *	.. conclusion, C software is memory insecure, and coding secure C++ software takes time.
+	 *	.. should propably just code Java or C#, but that is for pussies and I like our memories.
+	 *	.. voodoo bits, woohoo.
+	 * #Alpha4 :: This class is serving InternetRelayChat();
+	 *	InternetRelayChat IOS = InternetRelayChat();
+	 */
+	int rv = 0;
 	int len = 2048;
 	char buf[len];
-	string commands;
+
+	// single blocking detector
+	if(__socket_state(fd) < 1)
+		return 0;
+
+	// memory safety
 	bzero(buf, len);
-	read(active_id, buf, len);
-	commands = string(buf, len + 1);
-	printf("__flush_read() return value=%s", commands.c_str());
-	return commands;
+
+	// read
+	rv = read(fd, buf, len);
+	// read failed
+	if(rv == -1) { printf("__flush_read() returned -1 => error\n\r"); return -1; }
+
+	// store buffer and transfer it in the chain
+	*rbuf = string(buf, rv + 1);
+
+	// debugging
+	printf("__flush_read() rv=%i rbuf=%s\n\r", rv, rbuf->c_str());
+
+	// return size in bytes
+	return rv;
 }
 int GenericNetworking::__accept() {
 	// Store client data please, I like voodoo bits.
