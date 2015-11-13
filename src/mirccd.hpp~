@@ -6,5 +6,6 @@ enum	modules {
 // first pass configuration
 struct moduleconf {
 	modules name;
-	char *address, *port;
+	char *address;
+	char *port;
 };

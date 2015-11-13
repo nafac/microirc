@@ -21,8 +21,8 @@ class GenericNetworking {
 public:
 	GenericNetworking(); // Just call it.
 	//#Alpha5
-	int		_connect(int port, char *address);
-	int		ConnectCommunicationhub(void);
+	int		IPV4Connect(char *address, char *port);
+	int		IPV6Connect(char *address, char *port);
 	//int		_listen(int port, char *address);
 
 	//#Alpha5r1

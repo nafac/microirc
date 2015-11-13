@@ -23,48 +23,8 @@ GenericNetworking::GenericNetworking(/*position _mode, int port, char *address*/
 		_listen(port, address);
 */
 }
-// #Alpha5 :: connection management
-int GenericNetworking::_connect(int port, char *address) {
-	int fd;
-	// This function does not block, is good.
-	struct hostent			*resolver;
-	struct sockaddr_in	serv_addr;
-
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(fd < 0) {
-		printf("%i: failed to create socket\n", __LINE__);
-		return 1;
-	}
-
-	resolver = gethostbyname(address);
-	if(resolver == NULL) {
-		printf("Failed to get resolver.\n");
-		return 1;
-	}
-
-	bzero(&serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family	= AF_INET;
-	bcopy((char *)resolver->h_addr_list[0], (char *)&serv_addr.sin_addr.s_addr, resolver->h_length);
-	serv_addr.sin_port	= htons(port);
-
-	if(connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		printf("Failed to connect.\n");
-		return 1;
-	}
-
-	printf("Connected @ %s:%i\n", address, port);
-	
-	//#Alpha5r3
-	static_communication_router_fd = fd;
-	clientfds.push_back(fd);
-	
-	//#Alpha5r1
-	return fd;
-	
-	//#Alpha5r1 return data, loop it through a generic "interface".
-}
-// This is plain awesome ;)
-int GenericNetworking::ConnectCommunicationhub(void) {
+// AWESOME !!
+int GenericNetworking::IPV6Connect(char *address, char *port) {
 	int fd;
 	int s;
 	struct addrinfo hints;
@@ -79,7 +39,7 @@ int GenericNetworking::ConnectCommunicationhub(void) {
 	hints.ai_addr		= NULL;
 	hints.ai_next		= NULL;
 
-	s = getaddrinfo("::1", "6669", &hints, &result);
+	s = getaddrinfo(address, port, &hints, &result);
 	if(s != 0) {
 		perror("getaddrinfo");
 		exit(EXIT_FAILURE);
@@ -97,10 +57,12 @@ int GenericNetworking::ConnectCommunicationhub(void) {
 		exit(EXIT_FAILURE);
 	}
 
-	printf("CommunicationServer connection alive.\n\r");
+	printf("%s:%s connection alive.\n\r", address, port);
 
-	static_communication_router_fd = fd;
-	return fd;
+	// store dumb integers, yuck
+	static_communication_router_fd = fd;	// mostly for __connector_static_router()
+	clientfds.push_back(fd);		// mostly for (unused, non-functioning) select()
+	return fd;				// mostly for the practice
 }
 // #Alpha5r1 :: selectahz!!
 // 	>> return values -1 = disconnect, 0 = nothing, 1 = write, 2 = read
@@ -155,7 +117,7 @@ int GenericNetworking::__server_select(int *active_fd) {
 // __connector_transfer_io(source, destination) is a static router for one direction!
 int GenericNetworking::__connector_static_router(int source, int destination) {
 	string io;
-	// server => CommunicationHub
+	// CommunicationConnector => CommunicationHub
 	if(__flush_read(source, &io) > 2) __flush_write(destination, io);
 	return 0;
 }
@@ -242,3 +204,46 @@ int GenericNetworking::__accept() {
 	clientfds.push_back(newsockfd);
 	return newsockfd;
 }
+
+//#Alpha5 :: unused, old, yuck !
+/*
+int GenericNetworking::_connect(int port, char *address) {
+	int fd;
+	// This function does not block, is good.
+	struct hostent *resolver;
+	struct sockaddr_in serv_addr;
+
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(fd < 0) {
+		printf("%i: failed to create socket\n", __LINE__);
+		return 1;
+	}
+
+	resolver = gethostbyname(address);
+	if(resolver == NULL) {
+		printf("Failed to get resolver.\n");
+		return 1;
+	}
+
+	bzero(&serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family	= AF_INET;
+	bcopy((char *)resolver->h_addr_list[0], (char *)&serv_addr.sin_addr.s_addr, resolver->h_length);
+	serv_addr.sin_port	= htons(port);
+
+	if(connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+		printf("Failed to connect.\n");
+		return 1;
+	}
+
+	printf("Connected @ %s:%i\n", address, port);
+	
+	//#Alpha5r3
+	static_communication_router_fd = fd;
+	clientfds.push_back(fd);
+	
+	//#Alpha5r1
+	return fd;
+	
+	//#Alpha5r1 return data, loop it through a generic "interface".
+}
+*/
