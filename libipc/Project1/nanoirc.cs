@@ -26,7 +26,6 @@ namespace nanoirc
                     ConnectionRemote.Connect(new IPEndPoint(ip, 6667));
                     Console.WriteLine("Connection to {0} established.", ip);
                 };
-                Console.WriteLine("Connection to irc.quakenet.org established.");
                 // IPC
                 ConnectionBridge = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
                 ConnectionBridge.Connect(new IPEndPoint(IPAddress.Parse("::1"), 6669));
