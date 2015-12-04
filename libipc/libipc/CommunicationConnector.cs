@@ -11,13 +11,24 @@ namespace libipc
 		// 
 		private static Socket connector;
 		// 
-		public CommunicationConnector ()
+		public CommunicationConnector (string address, int port)
 		{
-			try {
+            try {
 				connector = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
 				try {
-					connector.Connect(new IPEndPoint(IPAddress.Parse ("::1"), 6669));
-					Console.WriteLine("CommunicationConnector connected to remote endpoint.");
+                    if(address.Contains("::1")) {
+                        connector.Connect(new IPEndPoint(IPAddress.Parse("::1"), 6669));
+                    } else {
+                        IPHostEntry host = Dns.GetHostEntry(address);
+                        foreach (IPAddress ip in host.AddressList)
+                        {
+                            connector.Connect(new IPEndPoint(ip, port));
+                            Console.WriteLine("CommunicationConnector :: connection to remote endpoint {0} established.", ip);
+                        };
+                    }
+                    // ^^
+                    //connector.Connect(new IPEndPoint(IPAddress.Parse ("::1"), 6669));
+					//Console.WriteLine("CommunicationConnector connected to remote endpoint.");
 				} catch (ArgumentNullException ane) {
 					Console.WriteLine ("ArgumentNullException : {0}", ane.ToString());
 				} catch (SocketException se) {

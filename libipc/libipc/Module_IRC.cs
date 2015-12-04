@@ -12,9 +12,10 @@ namespace libipc
 		// 
 		public Module_IRC(Socket handler, String hash)
 		{
-			// CommunicationConnector always connects to "::1:6669" ie. IPv6 localhost ie. CommunicationHub
-				// One could, or could not just use variables for pairing.
-			connector = new CommunicationConnector ();
+            //ConnunicationConnectoy always connect to "::1:6669 ie. IPV6 localhost to "CommunicationHub", It can be used to do connections to other remóte services too.
+            //CommunicationServer then maps connections with randomized hash to create the CommunicaionContoller tubes.
+	        // One alwaus could use OOP use for passing data but this is my networkinh demo.
+			connector = new CommunicationConnector ("::1", 6669);
 			connector.__write (String.Join("", "IPCH :", hash));
 			Console.WriteLine ("mod(IRC) :: alive !!");
 		}
