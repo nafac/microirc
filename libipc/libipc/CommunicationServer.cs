@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,13 +11,13 @@ namespace libipc
 	public class CommunicationServer
 	{
 		// Advanced Micro Devices
-		private ThreadDispatcher ThreadPoolManager;
+		private static ThreadDispatcher ThreadManager;
 		// Thread signal handler.
 		public static ManualResetEvent allDone = new ManualResetEvent(false);
 		public CommunicationServer ()
 		{
-			ThreadPoolManager = new ThreadDispatcher ();
-			Console.WriteLine ("CommunicationServer :: up and running !!");
+            ThreadManager = new ThreadDispatcher ();
+			//Console.WriteLine ("CommunicationServer :: up and running !!");
 		}
 		public void loop()
 		{
@@ -104,20 +103,21 @@ namespace libipc
 							if(s.Length < 3 || s.Contains("<EOF>"))
 								continue;
 							Console.WriteLine("CommunicationConnector :: {0}", String.IsNullOrEmpty(s) ? "<>" : s);
-							//#Alpha6 :: module detection
+                            // module detection
+                            // 
+                            // module_irc
 							if(s.Contains("NOTICE AUTH")) {
-								/*
-								// new IRC server connection
-								String hash = HashModule();
-								CreateModule("Module_IRC", hash);		// spawn fingerprinted module.
-								// CreateModuleBridge(handler, hash);	// connectable object.
-								return;									// detach from IPC-Hub.
-								*/
-								ThreadDispatcher.ModuleCreate(handler);	// bridge builder part 1 ..
-								return; // detach from IPCHub
+                                ThreadManager.CreateModule(handler, s);     // bridge builder part 1 ..
+								return;                                     //#Alpha6 WIP => bridged rail
 							}
-							//#Alpha6 :: process pairing
+                            // module_pairing
 							if(s.Contains("IPCH")) {
+                                // synchronize threads
+                                Thread.Sleep(30);
+                                // pair modules
+                                string[] i_deli = new string[] { ":", "\n", "\r" };
+                                string[] i_hash = content.Split(i_deli, StringSplitOptions.RemoveEmptyEntries);
+                                ThreadManager.AddEndpoint(handler, i_hash[1]);
 																		// bridge builder part 2 ..
 								// ConnectModuleBridge(handler, hash);	// hashed module can serve any amount of connections.
 								// 
@@ -185,124 +185,156 @@ namespace libipc
 				Console.WriteLine (e.ToString ());
 			}
 		}
-		/*
-		private static void ProcessControl(String command)
-		{
-			// I do this like, always..
-			String[] deli = new string[] { " " };
-			String[] args = command.Split(deli, StringSplitOptions.RemoveEmptyEntries);
-			if(args[0].Contains("SPAWN")) {
-				if (args [1].Contains ("IRCLIB")) {
-					
-				}
-				// pair their networks
-			}
-		}
-		*/
 	}
-	public class ThreadDispatcher
-	{
-		// ModuleManager = ConnectorBridge
-		/// <summary>
-		/// 
-		/// </summary>
-		static List<Module> ModuleManager = new List<Module>();
-		// 
-		public ThreadDispatcher()
-		{
-			Console.WriteLine ("ThreadDispatcher :: dummy :: up and running !!");
-		}
-		// 
-		public static int ModuleCreate(Socket handler)
-		{
-			// create module with unique hash
-			string hash = RandomHash();
-			foreach (Module m in ModuleManager) {
-				do {
-					hash = RandomHash();
-				} while(m.CheckFingerprint(hash));
-			}
-			// add module to manager list
-			ModuleManager.Add (new Module (handler, hash));
-			return 0;
-		}
-		public int ModulePairing(String hash)
-		{
-			return 0;
-		}
+    public class ThreadDispatcher
+    {
+        // 
+        private List<Module> ModuleManager = new List<Module>();
+        // 
+        public ThreadDispatcher()
+        {
+            //Console.WriteLine("ThreadDispatcher :: up and running !!");
+        }
+        // create new hashed module, connect it later
+        public string CreateModule(Socket handler, String passed_message)
+        {
+            // 
+            DisposableUtilities disposable = new DisposableUtilities();
+            String hash;
+            // 
+            generate_fresh_hash:
+            hash = disposable.GetHash();
+            // 
+            foreach (var m in ModuleManager)
+                if (m.CheckFingerprint(hash) == false) { continue; /* fingerprint is suitable for use */ } else { goto generate_fresh_hash; /* fingerprint found, generate new */ }
+            // 
+            Console.WriteLine("CreateModule: hash={0}", hash);
+            // 
+            ModuleManager.Add(new Module(hash, handler, passed_message));
+            // debug
+            foreach (var author in ModuleManager)
+            {
+                Console.WriteLine("Author: {0}", author.HashedFingerprint);
+            }
+            // unused
+            return hash;
+        }
+        public bool AddEndpoint(Socket handler, String hash)
+        {
+            Console.WriteLine("AddEndpoint: hash={0}", hash);
+            foreach (var m in ModuleManager)
+            {
+                Console.WriteLine("AddEndpoint: hash={0}", hash);
+                if (m.CheckFingerprint(hash))
+                {
+                    m.AddEndpoint(handler);
+                    return true;
+                }
+            }
+            return false;
+        }
+        public class Module
+        {
+            // 
+            public String HashedFingerprint;   // hash
+            private Socket Endpoint1;           // module 1
+            private Socket Endpoint2;           // module 2
+            //
+            public Module(String hash, Socket handler, String first_message)
+            {
+                // 
+                HashedFingerprint   = hash;     // hash
+                Endpoint1           = handler;  // module 1
+                // detect modules type
+                // 
+                // create module
+                modirc mod      = new modirc(hash, first_message);
+                Thread mod_t    = new Thread(mod.thread);
+                       mod_t.Start();
+                // 
+            }
+            public bool AddEndpoint(Socket handler)
+            {
+                // 
+                Endpoint2 = handler;  // module 2
+                // 
+                if(Endpoint1 != null && Endpoint2 != null)
+                {
+                    Console.WriteLine("AddEndpoint is valid !!");
+                    return true;
+                } else {
+                    Console.WriteLine("AddEndpoint is invalid !!");
+                    return false;
+                }
+            }
+            public bool CheckFingerprint(String hash)
+            {
+                Console.WriteLine("CheckFingerprint called");
+                if (HashedFingerprint.Contains(hash)) { return true; } else { return false; }
+            }
+        }
+    }
+/*
 		public class Module
 		{
 			// 
 			private String HashedFingerprint;
 			private Socket Endpoint1;
 			private Socket Endpoint2;
-			// 
-			public Module(Socket handler, string hash)
-			{
-				// store data
-				HashedFingerprint	= hash;
-				Endpoint1			= handler;
+            // 
+            public Module(Socket handler, string hash)
+            {
+                // TESTING THE BRIDGE
+                String message = String.Join("", "bridge builder\n\r<EOF>");
+                byte[] msg = Encoding.UTF8.GetBytes(message);
+                int bytes_sent = handler.Send(msg);
+                //Console.WriteLine ("CommunicationConnector::__write data={0} bytes={1}", message, bytes_sent);
 
-				// TESTING THE BRIDGE
-				String message = String.Join ("", "bridge builder\n\r<EOF>");
-				byte[] msg = Encoding.UTF8.GetBytes(message);
-				int bytes_sent = handler.Send(msg);
-				//Console.WriteLine ("CommunicationConnector::__write data={0} bytes={1}", message, bytes_sent);
+                // CreateBridgeStub()
+                //
+                // module	= "Module_IRC";
+                // hash		= unique random hash
 
-				// CreateBridgeStub()
-				//
-				// module	= "Module_IRC";
-				// hash		= unique random hash
+                // create the module
 
-				// create the module
-				Module_IRC IRC = new Module_IRC (hash);
-				Thread mod = new Thread (IRC.main);
-				mod.Start ();
+                // Grab socket and pass it as a variable, or just do it again and again and again
+                // pair them
+                // CreateModuleBridge(); ie. CreateBridgeStub();
 
-				// Grab socket and pass it as a variable, or just do it again and again and again
-				// pair them
-				// CreateModuleBridge(); ie. CreateBridgeStub();
-
-				Console.WriteLine ("Module({0}) :: up and running !!", HashedFingerprint);
-			}
+                Console.WriteLine("Module({0}) :: up and running !!", HashedFingerprint);
+            }
 			//
-			public void ModulePair(String hash)
-			{
-				// ConnectBridge
-				Console.WriteLine ("ModulePair :: up and running !!");
-			}
-			public bool CheckFingerprint(String hash)
-			{
-				if (HashedFingerprint.Contains (hash)) {
-					Console.WriteLine ("unique fingerprint found in db, pair it !");
-					return true;
-				} else {
-					Console.WriteLine ("unique fingerprint created.");
-					return false;
-				}
+			public void AddEndpoint(Socket s) {
+                // ConnectBridge
+                Endpoint2 = s;
+                Console.WriteLine ("CommunicationServer paired up the connection !! ");
 			}
 		}
-		// ======================================================================================
-		public static string RandomHash()
-		{
-			Random rnd = new Random();
-			int rnd_n = rnd.Next(Int32.MinValue, Int32.MaxValue);
-			using (MD5 md5Hash = MD5.Create()) {
-				string hash = GetMD5Hash(md5Hash, rnd_n.ToString());
-				Console.WriteLine("The MD5 hash=" + hash +".");
-				return hash;
-			}
-		}
-		private static string GetMD5Hash(MD5 md5Hash, string input)
-		{
-			byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
-			StringBuilder sBuilder = new StringBuilder ();
-			for (int i = 0; i < data.Length; i++) {
-				sBuilder.Append (data [i].ToString ("x2"));
-			}
-			return sBuilder.ToString ();
-		}
-		// ======================================================================================
 	}
+    */
+    // CommunicationServer::CommunicationRouter
+    public class CommunicationBridge
+    {
+        GenericNetworking net;
+        Socket one, two;
+        public CommunicationBridge(Socket fd_one, Socket fd_two)
+        {
+            // 
+            net = new GenericNetworking();
+            // 
+            one = fd_one;
+            two = fd_two;
+            // 
+            return;
+        }
+        public void __transfer_io()
+        {
+            while (true)
+            {
+                net.__write(two, net.__read(one));
+                net.__write(one, net.__read(two));
+            }
+        }
+    }
 }
 
