@@ -8,14 +8,32 @@ using System.Threading.Tasks;
 
 namespace libipc
 {
+    // Asynchronous sockets data.
+    public class StateObject
+    {
+        public Socket WorkSocket = null;
+        public const int buffersize = 1024;
+        public byte[] buffer = new byte[buffersize];
+        public StringBuilder sb = new StringBuilder();
+    }
+    // GenericNetworking
     class GenericNetworking
     {
         public GenericNetworking()
         {
             // foo foo
         }
+        public void CommunicationBridge(Socket Endpoint1, Socket Endpoint2)
+        {
+            Console.WriteLine("CommunicationBridge: Endpoint1={0} Endpoint2={1}", Endpoint1, Endpoint2);
+            while (true)
+            {
+                __write(Endpoint2, __read(Endpoint1));
+                __write(Endpoint1, __read(Endpoint2));
+            }
+        }
         // A blocking read, implement another with select.
-        public string __read(Socket s)
+        public String __read(Socket s)
         {
             // 
             byte[] bytes = new byte[1024];
@@ -34,7 +52,7 @@ namespace libipc
             }
         }
         // Writes are always non-blocking.
-        public void __write(Socket s, String message)
+        public int __write(Socket s, String message)
         {
             //
             string formatted_message;
@@ -46,14 +64,14 @@ namespace libipc
                 formatted_message = String.Join("", message, "\n\r<EOF>");
                 formatted_message_byte = Encoding.UTF8.GetBytes(formatted_message);
                 bytes_sent = s.Send(formatted_message_byte);
-                Console.WriteLine("CommunicationConnector::__write data={0} bytes={1}", formatted_message, bytes_sent);
-                return;
+                Console.WriteLine("GenericNetworking::__write data={0} bytes={1}", formatted_message, bytes_sent);
+                return bytes_sent;
                 // 
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
-                return;
+                return -1;
             }
         }
     }

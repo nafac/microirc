@@ -4,22 +4,29 @@ using System.Net.Sockets;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading;
+using Windows.UI.Xaml.Controls;
 
-namespace libipc
+namespace nano_irc
 {
-
-	public class CommunicationServer
+    public class CommunicationServer
 	{
-		// Advanced Micro Devices
-		private static ThreadDispatcher ThreadManager;
+        // Advanced Micro Devices
+        private TextBlock UIControl;
+		private ThreadDispatcher ThreadManager;
 		// Thread signal handler.
 		public static ManualResetEvent allDone = new ManualResetEvent(false);
-		public CommunicationServer ()
+        private mirccd mirccd;
+
+        public CommunicationServer(TextBlock UIControl)
 		{
-            ThreadManager = new ThreadDispatcher ();
-			//Console.WriteLine ("CommunicationServer :: up and running !!");
+            // 
+            this.UIControl = UIControl;
+            // 
+            this.ThreadManager = new ThreadDispatcher ();
+            this.loop();
 		}
-		public void loop()
+
+        public void loop()
 		{
 			Socket listener = new Socket (AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
 			try {

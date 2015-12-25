@@ -31,7 +31,7 @@ namespace nanoirc
                 // IPC
                 ConnectionBridge = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
                 ConnectionBridge.Connect(new IPEndPoint(IPAddress.Parse("::1"), 6669));
-                Console.WriteLine("CommunicationConnector connected to remote endpoint.");
+                Console.WriteLine("nanoirc connected to remote endpoint.");
                 // handshake
 
                 // blocking bridge

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace libipc
 {
@@ -13,10 +9,12 @@ namespace libipc
         {
             return;
         }
+        // String manipulation tools.
         public String[] explode(String[] delimeters, String content)
         {
             return content.Split(delimeters, StringSplitOptions.RemoveEmptyEntries);
         }
+        // Hashing and cryptocracy.
         public string GetHash()
         {
             Random rnd = new Random();
