@@ -5,6 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Networking;
+using Windows.Networking.Sockets;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -22,14 +25,132 @@ namespace nano_irc
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        // 
         public MainPage()
         {
             this.InitializeComponent();
-            // mirccd
-            new mirccd(TB_daemon);
-            // nanoirc
-            TB_client.Text = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Sed posuere interdum sem. Quisque ligula eros ullamcorper quis, lacinia quis facilisis sed sapien. Mauris varius diam vitae arcu. Sed arcu lectus auctor vitae, consectetuer et venenatis eget velit. Sed augue orci, lacinia eu tincidunt et eleifend nec lacus. Donec ultricies nisl ut felis, suspendisse potenti. Lorem ipsum ligula ut hendrerit mollis, ipsum erat vehicula risus, eu suscipit sem libero nec erat. Aliquam erat volutpat. Sed congue augue vitae neque. Nulla consectetuer porttitor pede. Fusce purus morbi tortor magna condimentum vel, placerat id blandit sit amet tortor. Mauris sed libero.Suspendisse facilisis nulla in lacinia laoreet, lorem velit accumsan velit vel mattis libero nisl et sem.Proin interdum maecenas massa turpis sagittis in, interdum non lobortis vitae massa. Quisque purus lectus, posuere eget imperdiet nec sodales id arcu.Vestibulum elit pede dictum eu, viverra non tincidunt eu ligula. Nam molestie nec tortor. Donec placerat leo sit amet velit. Vestibulum id justo ut vitae massa. Proin in dolor mauris consequat aliquam. Donec ipsum, vestibulum ullamcorper venenatis augue.Aliquam tempus nisi in auctor vulputate, erat felis pellentesque augue nec, pellentesque lectus justo nec erat. Aliquam et nisl.Quisque sit amet dolor in justo pretium condimentum. Vivamus placerat lacus vel vehicula scelerisque, dui enim adipiscing lacus sit amet sagittis, libero enim vitae mi.In neque magna posuere, euismod ac tincidunt tempor est. Ut suscipit nisi eu purus.Proin ut pede mauris eget ipsum. Integer vel quam nunc commodo consequat. Integer ac eros eu tellus dignissim viverra.Maecenas erat aliquam erat volutpat.Ut venenatis ipsum quis turpis.Integer cursus scelerisque lorem. Sed nec mauris id quam blandit consequat.Cras nibh mi hendrerit vitae, dapibus et aliquam et magna.Nulla vitae elit.Mauris consectetuer odio vitae augue.";
+            //
+            Communicator CommunicationHub = new Communicator(this);
+            CommunicationHub.CommunicationHub();
+            //
+            Communicator CommunicatorIRC = new Communicator(this);
+            CommunicatorIRC.CommunicationBridge("irc.se.quakenet.org", "6667", "localhost", "6669");
+            //
+            ConsoleAppendDaemon("");
+            ConsoleAppendClient("");
+        }
+        // mirccd
+        public async void CreateListener()
+        {
+            try
+            {
+                StreamSocketListener socketListener = new StreamSocketListener();
+                socketListener.ConnectionReceived += SocketListener_ConnectionReceived;
+                await socketListener.BindServiceNameAsync("6669");
+            }
+            catch (Exception e) { this.ConsoleAppendDaemon(e.ToString()); }
+        }
+        private async void SocketListener_ConnectionReceived(StreamSocketListener sender, StreamSocketListenerConnectionReceivedEventArgs args)
+        {
+            try {
+                this.ConsoleAppendDaemon("Connection accepted..\n");
+                //
+                Stream inputStream = args.Socket.InputStream.AsStreamForRead();
+                StreamReader inputReader = new StreamReader(inputStream);
+                //
+                Stream outputStream = args.Socket.OutputStream.AsStreamForWrite();
+                StreamWriter outputWriter = new StreamWriter(outputStream);
+                //
+                String inputBuffer;
+                // 
+                while (true)
+                {
+                    // print CommunicationServer passed messages.
+                    inputBuffer = String.Join("", await inputReader.ReadLineAsync(), "\n");
+                    this.ConsoleAppendDaemon(inputBuffer);
+                    // module pairing
+                    /*
+                    await outputWriter.WriteAsync(inputBuffer);
+                    await outputWriter.FlushAsync();
+                    */
+                }
+            } catch (Exception e) { this.ConsoleAppendClient(e.ToString()); }
         }
 
+        // nanoirc
+        public async void CreateConnector(string address, string port)
+        {
+            try
+            {
+                StreamSocket connectorSocket = new StreamSocket();
+                await connectorSocket.ConnectAsync(new HostName(address), port);
+                //
+                Stream outputStream = connectorSocket.OutputStream.AsStreamForWrite();
+                StreamWriter outputWriter = new StreamWriter(outputStream);
+                await outputWriter.WriteAsync("Hello World\n");
+                await outputWriter.FlushAsync();
+                //
+                Stream inputStream = connectorSocket.InputStream.AsStreamForRead();
+                StreamReader inputReader = new StreamReader(inputStream);
+                String inputBuffer = await inputReader.ReadLineAsync();
+                //
+                this.ConsoleAppendClient(String.Join("", "data=", inputBuffer, "\n\r"));
+            } catch (Exception e) { this.ConsoleAppendClient(e.ToString()); }
+        }
+        private async void CommunicationBridge(string address1, string port1, string address2, string port2)
+        {
+            try
+            {
+                // socket one
+                StreamSocket connectorSocket1 = new StreamSocket();
+                await connectorSocket1.ConnectAsync(new HostName(address1), port1);
+                // stream one
+                Stream inputStream1 = connectorSocket1.InputStream.AsStreamForRead();
+                StreamReader inputReader1 = new StreamReader(inputStream1);
+                Stream outputStream1 = connectorSocket1.OutputStream.AsStreamForWrite();
+                StreamWriter outputWriter1 = new StreamWriter(outputStream1);
+                // socket two
+                StreamSocket connectorSocket2 = new StreamSocket();
+                await connectorSocket2.ConnectAsync(new HostName(address2), port2);
+                // stream two
+                Stream inputStream2 = connectorSocket2.InputStream.AsStreamForRead();
+                StreamReader inputReader2 = new StreamReader(inputStream2);
+                Stream outputStream2 = connectorSocket2.OutputStream.AsStreamForWrite();
+                StreamWriter outputWriter2 = new StreamWriter(outputStream2);
+
+                String ConsoleMessage;
+                while (true)
+                {
+                    // display messages
+                    ConsoleMessage = await inputReader1.ReadLineAsync();
+                    ConsoleAppendClient(String.Join("", ConsoleMessage, "\n"));
+                    // Connector => Server
+                    await outputWriter2.WriteAsync(String.Join("", ConsoleMessage, "\n"));
+                    await outputWriter2.FlushAsync();
+                    // Server => Connector
+                    /*
+                    await outputWriter1.WriteAsync(String.Join("", await inputReader2.ReadLineAsync(), "\n"));
+                    await outputWriter1.FlushAsync();
+                    */
+                }
+            }
+            catch (Exception e) { this.ConsoleAppendClient(e.ToString()); }
+        }
+
+        // UI-manipulation
+        public async void ConsoleAppendDaemon(String text)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                this.TextBlockDaemon.Text = this.TextBlockDaemon.Text + text + "\n";
+            });
+        }
+        public async void ConsoleAppendClient(String text)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                this.TextBlockClient.Text = this.TextBlockClient.Text + text + "\n"; ;
+            });
+        }
     }
 }

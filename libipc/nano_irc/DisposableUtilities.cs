@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Text;
+using Windows.UI.Core;
+using Windows.UI.Xaml.Controls;
 
-namespace libipc
+namespace nano_irc
 {
     class DisposableUtilities
     {
@@ -15,6 +17,7 @@ namespace libipc
             return content.Split(delimeters, StringSplitOptions.RemoveEmptyEntries);
         }
         // Hashing and cryptocracy.
+        /*  // #A7TODO :: port MD5 to universal
         public string GetHash()
         {
             Random rnd = new Random();
@@ -36,6 +39,6 @@ namespace libipc
             }
             return sBuilder.ToString();
         }
+        */
     }
-
 }
