@@ -3,9 +3,32 @@
 using namespace std;
 #include <string>
 #include <vector>
-// #alpha5 :: microkernel-based streaming chaos server 2015
-//enum position { LISTEN, CONNECT };
+//#Alpha5 :: A microkernel-based streaming chaos server 2016.
 
+//#Alpha5r4
+class UniversalNetwork {
+	public:
+		UniversalNetwork();
+		// 
+		struct addrinfo *resolver;
+		// 
+		int IPV6CreateSocket(char *address, char *port);
+	private:
+		//
+	protected:
+		//	
+};
+class UniversalServer {
+	public:
+		UniversalServer(char *address, char *port);
+		// 
+		UniversalNetwork *CommonNetwork;
+	private:
+		int read_from_client(int fd); // unripe
+	protected:
+		//
+};
+//#Alpha5r3
 class GenericNetworking {
 	//#Alpha5r1
 	int			listener_id;
@@ -39,5 +62,9 @@ public:
 
 	//#Alpha5r3
 	int		__select_routing_module();
+	
+	//#Alpha5r4
+	UniversalNetwork *CommonNetwork;
 };
+
 #endif

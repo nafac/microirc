@@ -20,7 +20,7 @@ void *thread_dispatcher(void *arg) {
 }
 
 int main(int argc, char **argv) {
-	printf("mirccd 'Chaos Server 2015 #Alpha5' started.\n");
+	printf("mirccd 'Chaos Server 2016 #Alpha5r4' started.\n");
 	// ultra threaded dispatch server
 	pthread_t thread_id[4096];
 	// expandable built-in modules configuration. see above.
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 	//// Quakenet
 	args.name	= IRC_CLIENT;
 	args.address	= (char *)"irc.quakenet.org";
-	args.port	= (char *)"6667";
+	args.port			= (char *)"6667";
 	pthread_create(&(thread_id[2]), NULL, &thread_dispatcher, (void *)&args);	
 	sleep(1);
 	//// Freenode TODO: The supersecret handshake is not working, yet. I got more important things to do meanwhile.
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 */
 	args.name	= IRC_SERVER;
 	args.address	= (char *)"0.0.0.0";
-	args.port	= (char *)"6668";
+	args.port			= (char *)"6668";
 	pthread_create(&(thread_id[4]), NULL, &thread_dispatcher, (void *)&args);
 
 										

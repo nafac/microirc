@@ -15,12 +15,14 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+// CommunicationHub is a single, managed thread !!
 CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
-/*
-	process_dispatcher();
+	//#Alpha5r3
+	//process_dispatcher();
+	//#Alpha5r4
+	UniversalServer((char *)"::1", (char *)"6669");
 	while(1) { printf("debug: CommunicationServer ticking.. it should not!\n\r"); sleep(30); }
-*/
-	printf("C++ CommunicationServer is dead and buried, skipped !!\n\r");
+	//printf("C++ CommunicationServer is dead and buried, skipped !!\n\r");
 }
 //#Alpha5r2 :: process_dispatcher
 /*
@@ -89,6 +91,7 @@ int CommunicationServer::_process_dispatcher_loop(void) {
 	//	>> DO IT LATER!
 } */
 //#Alpha5r3 :: This will propably be ProcessDispatcher or another dumb complexity container.
+//#Alpha5r4 :: This is old, non-functioning code. do not use !!
 int		sock;
 int		connectlist[1024];
 fd_set	socks;

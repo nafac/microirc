@@ -4,6 +4,8 @@
 #include "mirccd.hpp"
 #include <stdio.h>
 
+//#Alpha5r4 :: EMBED COMMUNICATION CONNECTOR IN EVERY FRE****G MODULE.
+
 //#Alpha5r1 :: CommunicationConnector Point-to-Point Static Router.
 //	:: It WILL only route two server modules statically, mapping and routing is done in the CommunicationServer.
 //	:: client <=> client router.
@@ -24,7 +26,7 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 	if(conf->name == IRC_LIB) {
 		//printf("CommunicationConnector(IRC_LIB) created..\n");
 		GenericNetworking	*interserver	= new GenericNetworking(/*CONNECT, 6669, (char *)"127.0.0.1"*/);
-		GenericIRC		*irclib		= new GenericIRC(); // make these easily spawnable.
+		GenericIRC				*irclib				= new GenericIRC(); // make these easily spawnable.
 
 		//#Alpha5r1 :: TODO :: implement
 		//while(1) { io = irc->feed(hub->__select_transfer_io(io)); }
@@ -56,7 +58,7 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 int CommunicationConnector::static_route_io() {
 	while(1) {
 		router_one->__connector_static_router(router_two->static_communication_router_fd, router_one->static_communication_router_fd);
-/*		// pökäle
+/*	// pökäle
 		io = router_one->__connector_transfer_io(io);
 		io = router_two->__connector_transfer_io(io);
 */

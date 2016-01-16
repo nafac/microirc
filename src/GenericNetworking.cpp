@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -31,13 +32,13 @@ int GenericNetworking::IPV4Connect(char *address, char *port) {
 	struct addrinfo *result;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family		= AF_INET;
-	hints.ai_socktype	= SOCK_STREAM;
-	hints.ai_flags		= AI_PASSIVE;
-	hints.ai_protocol	= 0;
+	hints.ai_family			= AF_INET;
+	hints.ai_socktype		= SOCK_STREAM;
+	hints.ai_flags			= AI_PASSIVE;
+	hints.ai_protocol		= 0;
 	hints.ai_canonname	= NULL;
-	hints.ai_addr		= NULL;
-	hints.ai_next		= NULL;
+	hints.ai_addr				= NULL;
+	hints.ai_next				= NULL;
 
 	s = getaddrinfo(address, port, &hints, &result);
 	if(s != 0) {
@@ -65,33 +66,11 @@ int GenericNetworking::IPV4Connect(char *address, char *port) {
 	return fd;				// mostly for the practice
 }
 int GenericNetworking::IPV6Connect(char *address, char *port) {
-	int fd;
-	int s;
-	struct addrinfo hints;
-	struct addrinfo *result;
+	// 
+	CommonNetwork = new UniversalNetwork;
+	int fd = CommonNetwork->IPV6CreateSocket(address, port);
 
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family		= AF_INET6;
-	hints.ai_socktype	= SOCK_STREAM;
-	hints.ai_flags		= AI_PASSIVE;
-	hints.ai_protocol	= 0;
-	hints.ai_canonname	= NULL;
-	hints.ai_addr		= NULL;
-	hints.ai_next		= NULL;
-
-	s = getaddrinfo(address, port, &hints, &result);
-	if(s != 0) {
-		perror("getaddrinfo");
-		exit(EXIT_FAILURE);
-	}
-
-	fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if(fd == -1) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
-
-	if(connect(fd, result->ai_addr, result->ai_addrlen) == -1) {
+	if(connect(fd, CommonNetwork->resolver->ai_addr, CommonNetwork->resolver->ai_addrlen) == -1) {
 		close(fd);
 		perror("connect");
 		exit(EXIT_FAILURE);
@@ -245,45 +224,112 @@ int GenericNetworking::__accept() {
 	return newsockfd;
 }
 
-//#Alpha5 :: unused, old, yuck !
-/*
-int GenericNetworking::_connect(int port, char *address) {
-	int fd;
-	// This function does not block, is good.
-	struct hostent *resolver;
-	struct sockaddr_in serv_addr;
-
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(fd < 0) {
-		printf("%i: failed to create socket\n", __LINE__);
-		return 1;
-	}
-
-	resolver = gethostbyname(address);
-	if(resolver == NULL) {
-		printf("Failed to get resolver.\n");
-		return 1;
-	}
-
-	bzero(&serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family	= AF_INET;
-	bcopy((char *)resolver->h_addr_list[0], (char *)&serv_addr.sin_addr.s_addr, resolver->h_length);
-	serv_addr.sin_port	= htons(port);
-
-	if(connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-		printf("Failed to connect.\n");
-		return 1;
-	}
-
-	printf("Connected @ %s:%i\n", address, port);
-	
-	//#Alpha5r3
-	static_communication_router_fd = fd;
-	clientfds.push_back(fd);
-	
-	//#Alpha5r1
-	return fd;
-	
-	//#Alpha5r1 return data, loop it through a generic "interface".
+//#Alpha5r4
+UniversalNetwork::UniversalNetwork() {
+	printf("UniversalNetwork init'd \n");
 }
-*/
+int UniversalNetwork::IPV6CreateSocket(char *address, char *port) {
+	int fd;
+	int s;
+	struct addrinfo hints;
+	//struct addrinfo *result; // This is at UniversalNetwork->resolver.
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family			= AF_INET6;
+	hints.ai_socktype		= SOCK_STREAM;
+	hints.ai_flags			= AI_PASSIVE;
+	hints.ai_protocol		= 0;
+	hints.ai_canonname	= NULL;
+	hints.ai_addr				= NULL;
+	hints.ai_next				= NULL;
+
+	s = getaddrinfo(address, port, &hints, &resolver);
+	if(s != 0) {
+		perror("getaddrinfo");
+		exit(EXIT_FAILURE);
+	}
+
+	fd = socket(resolver->ai_family, resolver->ai_socktype, resolver->ai_protocol);
+	if(fd == -1) {
+		perror("socket");
+		exit(EXIT_FAILURE);
+	}
+		
+	return fd;
+}
+UniversalServer::UniversalServer(char *address, char *port) {
+	printf("UniversalServer init'd \n");
+	// 
+	CommonNetwork = new UniversalNetwork;
+	//
+	int i;
+	fd_set active_fdset, read_fdset;
+	struct sockaddr_in clientname;
+	size_t size;
+	// 
+	int sock = CommonNetwork->IPV6CreateSocket(address, port);
+	if(bind(sock, CommonNetwork->resolver->ai_addr, CommonNetwork->resolver->ai_addrlen) < 0) {
+		perror("bind");
+		exit(EXIT_FAILURE);
+	}
+	if(listen(sock, 8) < 0) {
+		perror("listen");
+		exit(EXIT_FAILURE);
+	}
+	//
+	FD_ZERO(&active_fdset);
+	FD_SET(sock, &active_fdset);
+	//
+	while(1) {
+		read_fdset = active_fdset;
+		// block
+		if(select(FD_SETSIZE, &read_fdset, NULL, NULL, NULL) < 0) {
+			perror("select");
+			exit(EXIT_FAILURE);
+		}
+		// service
+		for(i = 0; i < FD_SETSIZE; ++i) {
+			if(FD_ISSET(i, &read_fdset)) {
+				// accept new clients from listener
+				if(i == sock) {
+					//
+					int newfd;
+					//
+					size = sizeof(clientname);
+					newfd = accept(sock, (struct sockaddr *) &clientname, &size);
+					if(newfd < 0) {
+						perror("accept");
+						exit(EXIT_FAILURE); // dont
+					}
+					fprintf(stderr, "Server: connect from host %s:%hd. \n",
+						inet_ntoa(clientname.sin_addr),
+						ntohs(clientname.sin_port));
+					FD_SET(newfd, &active_fdset);
+				} else {
+					// data arriving from already-connected socket
+					if(read_from_client(i) < 0) {
+						close(i);
+						FD_CLR(i, &active_fdset);
+					}
+				}
+			}
+		}
+	}
+}
+// unripe
+int UniversalServer::read_from_client(int filedes) {
+	char buffer[1024];
+	int nbytes;
+
+	nbytes = read (filedes, buffer, 1024);
+	if(nbytes < 0)
+	{
+		perror("read");
+		exit(EXIT_FAILURE);
+	} else if(nbytes == 0)
+		return -1;
+	else {
+		fprintf (stderr, "Server: got message: `%s'\n", buffer);
+		return 0;
+	}
+}
