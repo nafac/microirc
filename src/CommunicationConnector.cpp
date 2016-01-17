@@ -31,6 +31,12 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 		//#Alpha5r1 :: TODO :: implement
 		//while(1) { io = irc->feed(hub->__select_transfer_io(io)); }
 	} else if(conf->name == IRC_CLIENT) {
+		UniversalNetwork *HUB = new UniversalNetwork();
+		HUB->IPV6Connect((char *)"::1", (char *)"6669");
+		UniversalNetwork *IRC = new UniversalNetwork();
+		IRC->IPV4Connect(conf->address, conf->port);
+		
+	/*//#Alpha5r3
 		router_one = new GenericNetworking();				// CommunicationConnector is plain network router, do process and thread spawning somewhere else.
 		router_one->IPV6Connect((char *)"::1", (char *)"6669");
 		printf("CommunicationHub connection alive.\n\r");
@@ -45,6 +51,7 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 		// BUG'd => my messages are written to sock but never reach CommunicationServer..
 
 		//while(1) { io = ircserver->__select_transfer_io(interserver->__select_transfer_io(io)); }
+	*/
 	} /*else if(conf->name == IRC_SERVER) {
 		//printf("CommunicationConnector(IRC_SERVER) created..\n");
 		GenericNetworking *intern_server = new GenericNetworking(CONNECT, 6669, (char *)"127.0.0.1");	// Internal	Network I/O

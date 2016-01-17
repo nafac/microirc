@@ -24,65 +24,6 @@ GenericNetworking::GenericNetworking(/*position _mode, int port, char *address*/
 		_listen(port, address);
 */
 }
-// AWESOME !!
-int GenericNetworking::IPV4Connect(char *address, char *port) {
-	int fd;
-	int s;
-	struct addrinfo hints;
-	struct addrinfo *result;
-
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family			= AF_INET;
-	hints.ai_socktype		= SOCK_STREAM;
-	hints.ai_flags			= AI_PASSIVE;
-	hints.ai_protocol		= 0;
-	hints.ai_canonname	= NULL;
-	hints.ai_addr				= NULL;
-	hints.ai_next				= NULL;
-
-	s = getaddrinfo(address, port, &hints, &result);
-	if(s != 0) {
-		perror("getaddrinfo");
-		exit(EXIT_FAILURE);
-	}
-
-	fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if(fd == -1) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
-
-	if(connect(fd, result->ai_addr, result->ai_addrlen) == -1) {
-		close(fd);
-		perror("connect");
-		exit(EXIT_FAILURE);
-	}
-
-	printf("%s:%s connection alive.\n\r", address, port);
-
-	// store dumb integers, yuck
-	static_communication_router_fd = fd;	// mostly for __connector_static_router()
-	clientfds.push_back(fd);		// mostly for (unused, non-functioning) select()
-	return fd;				// mostly for the practice
-}
-int GenericNetworking::IPV6Connect(char *address, char *port) {
-	// 
-	CommonNetwork = new UniversalNetwork;
-	int fd = CommonNetwork->IPV6CreateSocket(address, port);
-
-	if(connect(fd, CommonNetwork->resolver->ai_addr, CommonNetwork->resolver->ai_addrlen) == -1) {
-		close(fd);
-		perror("connect");
-		exit(EXIT_FAILURE);
-	}
-
-	printf("%s:%s connection alive.\n\r", address, port);
-
-	// store dumb integers, yuck
-	static_communication_router_fd = fd;	// mostly for __connector_static_router()
-	clientfds.push_back(fd);		// mostly for (unused, non-functioning) select()
-	return fd;				// mostly for the practice
-}
 // #Alpha5r1 :: selectahz!!
 // 	>> return values -1 = disconnect, 0 = nothing, 1 = write, 2 = read
 
@@ -223,17 +164,45 @@ int GenericNetworking::__accept() {
 	clientfds.push_back(newsockfd);
 	return newsockfd;
 }
-
+// ============================================================================================================
 //#Alpha5r4
 UniversalNetwork::UniversalNetwork() {
-	printf("UniversalNetwork init'd \n");
+	printf("UniversalNetwork :: init'd \n");
+}
+int UniversalNetwork::IPV4CreateSocket(char *address, char *port) {
+	int fd;
+	int s;
+	struct addrinfo hints;
+	// 
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family			= AF_INET;
+	hints.ai_socktype		= SOCK_STREAM;
+	hints.ai_flags			= AI_PASSIVE;
+	hints.ai_protocol		= 0;
+	hints.ai_canonname	= NULL;
+	hints.ai_addr				= NULL;
+	hints.ai_next				= NULL;
+	// 
+	s = getaddrinfo(address, port, &hints, &resolver);
+	if(s != 0) {
+		perror("getaddrinfo");
+		exit(EXIT_FAILURE);
+	}
+	//
+	fd = socket(resolver->ai_family, resolver->ai_socktype, resolver->ai_protocol);
+	if(fd == -1) {
+		perror("socket");
+		exit(EXIT_FAILURE);
+	}
+	//
+	main_fd =	fd;
+	return		fd;
 }
 int UniversalNetwork::IPV6CreateSocket(char *address, char *port) {
 	int fd;
 	int s;
 	struct addrinfo hints;
-	//struct addrinfo *result; // This is at UniversalNetwork->resolver.
-
+	// 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family			= AF_INET6;
 	hints.ai_socktype		= SOCK_STREAM;
@@ -242,33 +211,33 @@ int UniversalNetwork::IPV6CreateSocket(char *address, char *port) {
 	hints.ai_canonname	= NULL;
 	hints.ai_addr				= NULL;
 	hints.ai_next				= NULL;
-
+	// 
 	s = getaddrinfo(address, port, &hints, &resolver);
 	if(s != 0) {
 		perror("getaddrinfo");
 		exit(EXIT_FAILURE);
 	}
-
+	// 
 	fd = socket(resolver->ai_family, resolver->ai_socktype, resolver->ai_protocol);
 	if(fd == -1) {
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
-		
-	return fd;
+	//
+	main_fd =	fd;
+	return		fd;
 }
-UniversalServer::UniversalServer(char *address, char *port) {
+//#Alpha5r4
+int UniversalNetwork::IPV6Server(char *address, char *port) {
 	printf("UniversalServer init'd \n");
-	// 
-	CommonNetwork = new UniversalNetwork;
 	//
 	int i;
 	fd_set active_fdset, read_fdset;
 	struct sockaddr_in clientname;
 	size_t size;
 	// 
-	int sock = CommonNetwork->IPV6CreateSocket(address, port);
-	if(bind(sock, CommonNetwork->resolver->ai_addr, CommonNetwork->resolver->ai_addrlen) < 0) {
+	int sock = IPV6CreateSocket(address, port);
+	if(bind(sock, resolver->ai_addr, resolver->ai_addrlen) < 0) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
@@ -307,7 +276,7 @@ UniversalServer::UniversalServer(char *address, char *port) {
 					FD_SET(newfd, &active_fdset);
 				} else {
 					// data arriving from already-connected socket
-					if(read_from_client(i) < 0) {
+					if(__read(i) < 0) {
 						close(i);
 						FD_CLR(i, &active_fdset);
 					}
@@ -315,21 +284,58 @@ UniversalServer::UniversalServer(char *address, char *port) {
 			}
 		}
 	}
+	return -1;
 }
-// unripe
-int UniversalServer::read_from_client(int filedes) {
+int UniversalNetwork::IPV4Connect(char *address, char *port) {
+	// 
+	int fd = IPV4CreateSocket(address, port);
+	//
+	if(connect(fd, resolver->ai_addr, resolver->ai_addrlen) == -1)
+	{
+		close(fd);
+		perror("connect");
+		exit(EXIT_FAILURE);
+	}
+	// 
+	printf("%s:%s connection alive.\n\r", address, port);
+	//
+	main_fd = fd;	// object access
+	return fd;		// alien access
+}
+int UniversalNetwork::IPV6Connect(char *address, char *port) {
+	// 
+	int fd = IPV6CreateSocket(address, port);
+	//
+	if(connect(fd, resolver->ai_addr, resolver->ai_addrlen) == -1)
+	{
+		close(fd);
+		perror("connect");
+		exit(EXIT_FAILURE);
+	}
+	//
+	printf("%s:%s connection alive.\n\r", address, port);
+	//
+	main_fd = fd;	// object access
+	return fd;		// alien access
+}
+int UniversalNetwork::__read(int filedes) {
+	if(filedes == -1) filedes = main_fd;
+	// 
 	char buffer[1024];
 	int nbytes;
-
+	// a blocking read
 	nbytes = read (filedes, buffer, 1024);
 	if(nbytes < 0)
 	{
 		perror("read");
 		exit(EXIT_FAILURE);
-	} else if(nbytes == 0)
+	} else if(nbytes == 0) {
 		return -1;
-	else {
+	} else {
 		fprintf (stderr, "Server: got message: `%s'\n", buffer);
 		return 0;
 	}
+}
+int UniversalNetwork::__write(string cmd) {
+	return 0;
 }

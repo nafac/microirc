@@ -15,6 +15,7 @@ void *thread_dispatcher(void *arg) {
 		CommunicationServer((struct moduleconf *)arg);
 	} else if(args->name == IRC_LIB || args->name == IRC_CLIENT || args->name == IRC_SERVER) {
 		CommunicationConnector((struct moduleconf *)arg);
+		// embed these as modules !!
 	}
 	return NULL;
 }

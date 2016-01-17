@@ -9,24 +9,23 @@ using namespace std;
 class UniversalNetwork {
 	public:
 		UniversalNetwork();
-		// 
-		struct addrinfo *resolver;
-		// 
+		// universal functionality
+		int IPV4CreateSocket(char *address, char *port);
 		int IPV6CreateSocket(char *address, char *port);
+		// client functionality
+		int IPV4Connect(char *address, char *port);
+		int IPV6Connect(char *address, char *port);
+		// server functionality
+		int IPV6Server(char *address, char *port);
+		// 
+		int __read(int filedes);
+		int __write(string cmd);
 	private:
-		//
+		// 
+		int main_fd;
+		struct addrinfo *resolver;
 	protected:
 		//	
-};
-class UniversalServer {
-	public:
-		UniversalServer(char *address, char *port);
-		// 
-		UniversalNetwork *CommonNetwork;
-	private:
-		int read_from_client(int fd); // unripe
-	protected:
-		//
 };
 //#Alpha5r3
 class GenericNetworking {
