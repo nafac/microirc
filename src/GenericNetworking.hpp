@@ -18,12 +18,16 @@ class UniversalNetwork {
 		// server functionality
 		int IPV6Server(char *address, char *port);
 		// 
-		int __read(int filedes);
-		int __write(string cmd);
+		string	__read(int sfd, int *rv);
+		int			__write(int sfd, string text);
+		// do NOT attempt to use if select()ed !!
+		int			__select_socket_state(int sockfd);
 	private:
-		// 
+		// vars
 		int main_fd;
 		struct addrinfo *resolver;
+		// methods
+		int			__write_sub(int sfd, const char *, int);
 	protected:
 		//	
 };
@@ -34,10 +38,10 @@ class GenericNetworking {
 	vector<int>	clientfds;
 //	fd_set		fds;			// unused?
 	//#Alpha5r1
-	int		__flush_read(int fd, string *rbuf);
-	int		__flush_write(int active_fd, string io);
-	int		__flush_write_sub(int active_fd, const char *, int);
-	int		__accept();
+//int		__flush_read(int fd, string *rbuf);										// converted
+//int		__flush_write(int active_fd, string io);							// converted
+//int		__flush_write_sub(int active_fd, const char *, int);	// converted
+	int		__accept();																						// -
 	//#Alpha5r3
 	//int		static_connector_router;
 public:

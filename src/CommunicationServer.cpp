@@ -22,7 +22,7 @@ CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
 	//#Alpha5r4
 	UniversalNetwork *HUB = new UniversalNetwork();
 	HUB->IPV6Server((char *)"::1", (char *)"6669");
-	while(1) { printf("debug: CommunicationServer ticking.. it should not!\n\r"); sleep(30); }
+	while(1) { printf("UniversalNetwork::IPV6Server (CommunicationServer::Hub) ticks, it should not !! \n"); sleep(30); }
 	//printf("C++ CommunicationServer is dead and buried, skipped !!\n\r");
 }
 //#Alpha5r2 :: process_dispatcher

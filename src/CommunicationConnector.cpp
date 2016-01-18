@@ -3,6 +3,7 @@
 #include "GenericNetworking.hpp"
 #include "mirccd.hpp"
 #include <stdio.h>
+#include <unistd.h>
 
 //#Alpha5r4 :: EMBED COMMUNICATION CONNECTOR IN EVERY FRE****G MODULE.
 
@@ -13,8 +14,8 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 	// SHINY Static Router
 	int static_router_one, static_router_two;
 	// even older variables
-	//int rv:
-	//string io;
+	// int rv;
+	// string io;
 
 	// data transfers
 	// fd_one <=> translator <=> fd_two
@@ -31,10 +32,19 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 		//#Alpha5r1 :: TODO :: implement
 		//while(1) { io = irc->feed(hub->__select_transfer_io(io)); }
 	} else if(conf->name == IRC_CLIENT) {
+		//
 		UniversalNetwork *HUB = new UniversalNetwork();
 		HUB->IPV6Connect((char *)"::1", (char *)"6669");
 		UniversalNetwork *IRC = new UniversalNetwork();
 		IRC->IPV4Connect(conf->address, conf->port);
+		//
+		int rv = 0;			// we do not "handle" this here, yuck	
+		while(1) {
+			// router_one->__connector_static_router(router_two->static_communication_router_fd, router_one->static_communication_router_fd);
+			HUB->__write(-1, IRC->__read(-1, &rv));
+			// IRC->__write(HUB->__read(-1, &rv);
+			//#Alpha6TODO :: copy pairing from libipc.
+		}
 		
 	/*//#Alpha5r3
 		router_one = new GenericNetworking();				// CommunicationConnector is plain network router, do process and thread spawning somewhere else.
@@ -64,7 +74,11 @@ CommunicationConnector::CommunicationConnector(struct moduleconf *conf) {
 //#Alpha5r1 :: Two Connections per Connector MAX!
 int CommunicationConnector::static_route_io() {
 	while(1) {
+		printf("CommunicationConnector::static_route_io - EMBEDDED CONNECTOR TICKING \n");
+		sleep(60);
+/*
 		router_one->__connector_static_router(router_two->static_communication_router_fd, router_one->static_communication_router_fd);
+*/
 /*	// pökäle
 		io = router_one->__connector_transfer_io(io);
 		io = router_two->__connector_transfer_io(io);

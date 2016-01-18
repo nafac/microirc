@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 	/// IRC_CLIENT
 	//// Quakenet
 	args.name	= IRC_CLIENT;
-	args.address	= (char *)"irc.quakenet.org";
+	args.address	= (char *)"irc.se.quakenet.org";
 	args.port			= (char *)"6667";
 	pthread_create(&(thread_id[2]), NULL, &thread_dispatcher, (void *)&args);	
 	sleep(1);
