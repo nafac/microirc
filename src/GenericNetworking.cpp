@@ -155,11 +155,7 @@ int UniversalNetwork::IPV6CreateSocket(char *address, char *port) {
 int UniversalNetwork::IPV6Server(char *address, char *port) {
 	printf("UniversalNetwork::IPV6Server init'd \n");
 	//
-	int i, rv;
 	int one = 1;
-	fd_set active_fdset, read_fdset;
-	struct sockaddr_in clientname;
-	size_t size;
 	// 
 	int sock = IPV6CreateSocket(address, port);
 	// 
@@ -174,47 +170,8 @@ int UniversalNetwork::IPV6Server(char *address, char *port) {
 		exit(EXIT_FAILURE);
 	}
 	//
-	FD_ZERO(&active_fdset);
-	FD_SET(sock, &active_fdset);
-	//
-	while(1) {
-		read_fdset = active_fdset;
-		// block
-		if(select(FD_SETSIZE, &read_fdset, NULL, NULL, NULL) < 0) {
-			perror("select");
-			exit(EXIT_FAILURE);
-		}
-		// service
-		for(i = 0; i < FD_SETSIZE; ++i) {
-			if(FD_ISSET(i, &read_fdset)) {
-				// accept new clients from listener
-				if(i == sock) {
-					//
-					int newfd;
-					//
-					size = sizeof(clientname);
-					newfd = accept(sock, (struct sockaddr *) &clientname, &size);
-					if(newfd < 0) {
-						perror("accept");
-						exit(EXIT_FAILURE); // dont
-					}
-					fprintf(stderr, "Server: connect from host %s:%hd. \n",
-						inet_ntoa(clientname.sin_addr),
-						ntohs(clientname.sin_port));
-					FD_SET(newfd, &active_fdset);
-				} else {
-					// data arriving from already-connected socket
-					string pass = __read(i, &rv);
-					if(rv < 0) {
-						close(i);
-						FD_CLR(i, &active_fdset);
-					}
-				}
-			}
-		}
-	}
-	printf("UniversalNetwork::IPV6Server gone nuclear, reboot it !! \n");
-	return -1;
+	main_fd = sock;
+	return 0;
 }
 int UniversalNetwork::IPV4Connect(char *address, char *port) {
 	printf("UniversalNetwork::IPV4Connect - Connecting %s:%s.. \n", address, port);
@@ -311,50 +268,31 @@ string UniversalNetwork::__read(int sockfd, int *rv) {
 		*rv = nbytes;
 		ret = string(buffer, nbytes + 1);
 		// 
-		printf("UniversalNetwork::__read - rv='%i' buf=%s \n", nbytes, ret.c_str());
+		// printf("UniversalNetwork::__read - rv='%i' buf=%s \n", nbytes, ret.c_str());
 		// 
 		return(ret);
 	}
 }
-int UniversalNetwork::__write(int active_id, string buf) {
-	// This works
-	int i, rv;
-	Toolbox *box = new Toolbox();
-	vector<string>	commands;
-	commands = box->explode(buf, "\n");
-	for(i = 0; i < commands.size(); i++) {
-		commands[i].append("\n");
-		rv = __write_sub(active_id, commands[i].c_str(), commands[i].size() + 1);
- 	}
-	__write_sub(active_id, "\n\r<EOF>", 8);
-	/*
-	// do this proto later, whatever it does
-	if(commands.size() > 2) {
-		//printf("commands.size()=%i\n\r", commands.size());
-		//rv = __write_sub(active_id, buf.c_str(), buf.size() + 1);
-		__write_sub(active_id, "\n\r<EOF>", 8);
-	}
-	*/
-	return 0;
-}
-int UniversalNetwork::__write_sub(int active_id, const char *text, int text_size) {
+// chop, chop !!
+int UniversalNetwork::__write(int active_id, string buffer) {
 	// 
-	if(text_size <= 5)
-		return 0;
 	if(active_id < 0)
 		active_id = main_fd;
 	// 
-	int rv = write(active_id, text, text_size);
+	Toolbox *disposable_tools = new Toolbox();
+	vector<string> cmd = disposable_tools->explode(buffer, "\n");
 	// 
-	if(rv < 0) {
-		printf("__write_sub FAIL'd :: %s\n", text);
-		return -1;
-	} else {
-		printf("__write_sub SUCC'd :: text=%s\n",				text);
-		printf("__write_sub SUCC'd :: text_size=%i\n",	text_size);
-		//memset(&text, 0, text_size - 1);
-		return 1;
+	int i, rv, counter = 0;
+	for(i = 0; i < cmd.size(); i++)
+	{
+		if(cmd[i].length() < 5)
+			continue;
+		rv = write(active_id, cmd[i].c_str(), cmd[i].length() - 1);
+		if(rv < 0)
+			return -1;
+		counter += rv;
 	}
+	return counter;
 }
 // I guess this is for the conditional blocks..
 //	.. yes I'ma drain your CPU.
@@ -375,3 +313,6 @@ int UniversalNetwork::__select_socket_state(int target_fd) {
 	return liaani;
 }
 */
+int UniversalNetwork::get_fd(void) {
+	return main_fd;
+}

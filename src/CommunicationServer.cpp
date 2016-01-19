@@ -1,6 +1,7 @@
 // CommunicationServer :: Text-based IPC hub.
 #include "CommunicationServer.hpp"
 #include "GenericNetworking.hpp"
+#include "Toolbox.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,12 +9,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <sys/time.h>
 #include <pthread.h>
+
+// #include <iostream>
+// using namespace std;
 
 // CommunicationHub is a single, managed thread !!
 CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
@@ -22,8 +27,72 @@ CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
 	//#Alpha5r4
 	UniversalNetwork *HUB = new UniversalNetwork();
 	HUB->IPV6Server((char *)"::1", (char *)"6669");
-	while(1) { printf("UniversalNetwork::IPV6Server (CommunicationServer::Hub) ticks, it should not !! \n"); sleep(30); }
-	//printf("C++ CommunicationServer is dead and buried, skipped !!\n\r");
+	//
+	int i, rv;
+	fd_set active_fdset, read_fdset;
+	struct sockaddr_in clientname;
+	size_t size;
+	//
+	int fd = HUB->get_fd();
+	// 
+	FD_ZERO(&active_fdset);
+	FD_SET(fd, &active_fdset);
+	// 
+	while(1) {
+		read_fdset = active_fdset;
+		// block
+		if(select(FD_SETSIZE, &read_fdset, NULL, NULL, NULL) < 0) {
+			perror("select");
+			exit(EXIT_FAILURE);
+		}
+		// service
+		for(i = 0; i < FD_SETSIZE; ++i) {
+			if(FD_ISSET(i, &read_fdset)) {
+				// accept new clients from listener
+				if(i == fd) {
+					//
+					int newfd;
+					//
+					size = sizeof(clientname);
+					newfd = accept(fd, (struct sockaddr *) &clientname, &size);
+					if(newfd < 0) {
+						perror("accept");
+						exit(EXIT_FAILURE); // dont
+					}
+					fprintf(stderr, "Server: connect from host %s:%hd. \n",
+						inet_ntoa(clientname.sin_addr),
+						ntohs(clientname.sin_port));
+					FD_SET(newfd, &active_fdset);
+				} else {
+					// data arriving from already-connected socket
+					Feed(HUB->__read(i, &rv));
+					if(rv < 0) {
+						close(i);
+						FD_CLR(i, &active_fdset);
+					}
+				}
+			}
+		}
+	}
+	//while(1) { printf("UniversalNetwork::IPV6Server (CommunicationServer::Hub) ticks, it should not !! \n"); sleep(30); }	// not anymore
+	//printf("C++ CommunicationServer is dead and buried, skipped !!\n\r");																									//
+}
+int CommunicationServer::Feed(string reader)
+{
+	//#Alpha6
+	Toolbox *disposable_tools = new Toolbox();
+	vector<string> feed = disposable_tools->explode(reader, "\n");
+	// 
+	for(int i = 0; i < feed.size(); i++)
+	{
+		if(feed[i].length() < 5)
+			continue;
+		// protocol
+		if(disposable_tools->Contains(feed[i], "NOTICE AUTH")) {
+			printf("CommunicationServer::Feed NOTICE AUTH DETECTED\n\r");
+		}
+		printf("CommunicationServer::Feed feed[%i]=%s \n\r", i, feed[i].c_str());
+ 	}
 }
 //#Alpha5r2 :: process_dispatcher
 /*

@@ -6,8 +6,12 @@ class CommunicationServer {
 	public:
 		//
 	};
-	// process_dispatcher
+private:
+	// new
+	int Feed(string reader);
+	// old
 	GenericNetworking *CommunicationHub;
+	// old
 	int		process_dispatcher(void);
 	void		build_select_list(void);
 	void		read_socks(void);

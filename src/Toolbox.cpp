@@ -29,4 +29,4 @@ vector<string> Toolbox::explode(const string &str, const string &delim) {
 	arr.push_back(str.substr(k, i - k));
 	return arr;
 }
-
+bool Toolbox::Contains(const string haystack, const string needle) { if(haystack.find(needle) != std::string::npos) return true; else return false; }
