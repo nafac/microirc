@@ -1,3 +1,4 @@
+/* // CRAP
 // built-in modules
 enum	modules {
 	COMMUNICATION_HUB,					// The Communication Hub
@@ -8,3 +9,4 @@ struct moduleconf {
 	modules name;
 	char *address, *port;
 };
+*/ 

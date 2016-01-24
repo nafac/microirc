@@ -2,6 +2,7 @@
 #include "CommunicationServer.hpp"
 #include "GenericNetworking.hpp"
 #include "Toolbox.hpp"
+#include "modules/mod_irc.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +22,7 @@
 // using namespace std;
 
 // CommunicationHub is a single, managed thread !!
-CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
+CommunicationServer::CommunicationServer() {
 	//#Alpha5r3
 	//process_dispatcher();
 	//#Alpha5r4
@@ -32,6 +33,9 @@ CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
 	fd_set active_fdset, read_fdset;
 	struct sockaddr_in clientname;
 	size_t size;
+	//
+	string reader;
+	Toolbox *disposable_tools = new Toolbox();
 	//
 	int fd = HUB->get_fd();
 	// 
@@ -65,7 +69,24 @@ CommunicationServer::CommunicationServer(struct moduleconf *configuration) {
 					FD_SET(newfd, &active_fdset);
 				} else {
 					// data arriving from already-connected socket
-					Feed(HUB->__read(i, &rv));
+					reader = HUB->__read(i, &rv);
+					if (reader.length() < 5)
+						continue;
+					// IPC-Hub
+					if (disposable_tools->Contains(reader, "NOTICE AUTH"))
+					{
+						// printf("NOTICE AUTH DETECTED\n\r");
+						//#Alpha6TODO :: Implement ThreadDispatcher.
+						//#Alpha6TODO :: Add module hooks.
+						// 
+						mod_irc *module_irc = new mod_irc();
+						//#Alpha6 :: do not close listener
+						// close(i);
+						// FD_CLR(i, &active_fdset);
+						// continue;
+					}
+					printf("CommunicationServer::CommunicationServer :: reader=%s\n\r", reader.c_str());
+					// Feed(HUB->__read(i, &rv));
 					if(rv < 0) {
 						close(i);
 						FD_CLR(i, &active_fdset);

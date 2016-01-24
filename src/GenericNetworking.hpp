@@ -19,11 +19,11 @@ class UniversalNetwork {
 		int IPV6Server(char *address, char *port);
 		// 
 		string	__read(int sfd, int *rv);
-		int			__write(int sfd, string text);
+		int		__write(int sfd, string text);
 		// do NOT attempt to use for selected !!
-		int			__select_socket_state(int sockfd);
+		int		__select_socket_state(int sockfd);
 		//
-		int			get_fd();
+		int		get_fd();
 	private:
 		// vars
 		int main_fd;

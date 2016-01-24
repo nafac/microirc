@@ -4,10 +4,14 @@
 #include "GenericNetworking.hpp"
 
 class CommunicationConnector {
-	//#Alpha5	:: irssi <=> mirccd <=> quakenet proto
-	//#Alpha5r1	:: Static Connector Router
-	GenericNetworking *router_one, *router_two;
+	UniversalNetwork *router_one, *router_two;
 public:
-	CommunicationConnector(struct moduleconf *);
-	int static_route_io(void);
+	//#Alpha6
+	CommunicationConnector();
+	// 
+	int AddEndpoint(char *address, char *port);
+	// 
+	int __static_route_io();
+	int __read();
+	int __write();
 };

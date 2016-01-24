@@ -6,22 +6,59 @@
 #include <unistd.h>
 #include <strings.h>
 
-int main(int, char **);
+/* #Alpha6 */
+// it is still disgusting
 
+// 
+int main(int, char **);
+// 
+//#Alpha6 :: Implement core and backend functionality exception handling and keep-alive !!
+void *CommunicationServer_dp(void *)
+{
+	CommunicationServer();													// create endpoint 1 (IPCHub)
+	return NULL;															// keepalive
+}
+void *IRC_dp(void *)
+{
+	// 
+	CommunicationConnector	*IPCH = new CommunicationConnector();			// create endpoint 1
+	IPCH->AddEndpoint((char *)"irc.se.quakenet.org", (char *)"6667");		// create endpoint 2
+	IPCH->__static_route_io();												// run bridge
+	return NULL;															// keepalive
+}
+// 
+int main(int argc, char **argv)
+{
+	printf("mirccd 'Chaos Server 2016 #Alpha6' started.\n");
+	// 
+	pthread_t CommunicationServer_t;
+	pthread_create(&CommunicationServer_t, NULL, &CommunicationServer_dp, NULL);
+	//
+	sleep(1);
+	// 
+	pthread_t IRC_t;
+	pthread_create(&IRC_t, NULL, &IRC_dp, NULL);
+	//
+	while (1) { sleep(60); }
+	return -1;
+}
+/*
 void *thread_dispatcher(void *arg) {
 	// built-in modules and first pass configuration.
 	struct moduleconf *args = (struct moduleconf *)arg;
-	if(args->name == COMMUNICATION_HUB) {
+	if (args->name == COMMUNICATION_HUB) {
 		CommunicationServer((struct moduleconf *)arg);
-	} else if(args->name == IRC_LIB || args->name == IRC_CLIENT || args->name == IRC_SERVER) {
+	}
+	else if (args->name == IRC_LIB || args->name == IRC_CLIENT || args->name == IRC_SERVER) {
 		CommunicationConnector((struct moduleconf *)arg);
 		// embed these as modules !!
 	}
 	return NULL;
 }
-
-int main(int argc, char **argv) {
-	printf("mirccd 'Chaos Server 2016 #Alpha5r4' started.\n");
+*/
+/*
+int main_old(int argc, char **argv) {
+	
 	// ultra threaded dispatch server
 	pthread_t thread_id[4096];
 	// expandable built-in modules configuration. see above.
@@ -45,13 +82,11 @@ int main(int argc, char **argv) {
 	pthread_create(&(thread_id[2]), NULL, &thread_dispatcher, (void *)&args);	
 	sleep(1);
 	//// Freenode TODO: The supersecret handshake is not working, yet. I got more important things to do meanwhile.
-/*
 	args.name		= IRC_CLIENT;
 	args.address	= (char *)"chat.freenode.net";
 	args.port		= 6667;
 	pthread_create(&(thread_id[3]), NULL, &thread_dispatcher, (void *)&args);
 	sleep(1);
-*/
 	args.name	= IRC_SERVER;
 	args.address	= (char *)"0.0.0.0";
 	args.port			= (char *)"6668";
@@ -75,5 +110,6 @@ int main(int argc, char **argv) {
 	// USERS
 	// ..this does not work..!!
 
-	printf("main finalized.. do something useful..\n");
+	printf("main finalized, this should not happen!! do something useful..\n\r");
 }
+*/

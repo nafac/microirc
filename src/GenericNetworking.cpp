@@ -91,7 +91,7 @@ int GenericNetworking::__accept() {
 // ============================================================================================================
 //#Alpha5r4
 UniversalNetwork::UniversalNetwork() {
-	printf("UniversalNetwork :: init'd \n");
+	// printf("UniversalNetwork :: init'd \n");
 }
 int UniversalNetwork::IPV4CreateSocket(char *address, char *port) {
 	int fd;
@@ -244,13 +244,13 @@ int UniversalNetwork::__read(int fd, string *rbuf) {
 	return rv;
 }
 */
-string UniversalNetwork::__read(int sockfd, int *rv) {
+string UniversalNetwork::__read(int sockfd, int *rv)
+{
 	if(sockfd == -1) sockfd = main_fd;
 	// 
+	string ret;
 	char buffer[1024];
 	int nbytes;
-	// 
-	string ret;
 	// tweaky, tweaky
 	memset(buffer, 0, 1023);
 	// a blocking read
@@ -264,12 +264,9 @@ string UniversalNetwork::__read(int sockfd, int *rv) {
 		*rv = 0;
 		return("\n");
 	} else {
-		// 
 		*rv = nbytes;
 		ret = string(buffer, nbytes + 1);
-		// 
 		// printf("UniversalNetwork::__read - rv='%i' buf=%s \n", nbytes, ret.c_str());
-		// 
 		return(ret);
 	}
 }
