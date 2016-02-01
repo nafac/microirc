@@ -16,7 +16,7 @@ namespace libipc
         [STAThread]
         public static void Main(string[] args)
         {
-            Application.EnableVisualStyles();
+            //Application.EnableVisualStyles();
 
             // 
             Console.WriteLine("Chaos Server #Alpha6");
