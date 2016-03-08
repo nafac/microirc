@@ -1,18 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-import socket, ssl, traceback, logging
+import socket, ssl, traceback, logging, threading, time
+from snippets import *
 
 class network():
 	def __init__(self):
-		# libipc client 
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-		self.sock.connect(("127.0.0.1", 6669));
-		while True:
-			data = self.sock.recv(8192).decode();
-			if not data: continue;
-			print(data);
+		# libipc client
+		self.__sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM);
+		self.__sock.connect(("::1", 6669));
+		# thread
+		threading.Thread(target=self.__IO).start()
+		# thread management
+		# while(True):
+		#	time.sleep(3);
 		return;
+
 		# standalone client
 		'''
 		logging_format = '%(asctime)-15s: %(message)s'
@@ -37,33 +40,24 @@ class network():
 		
 		return
 		'''
-	
-	def loop(self):
-		while True:
-			try:
-				# Write buffer:
-				''' #Alpha1
-				for message in self.bufferi:
-					self.sock.sendall(('%s\n\r' % (message)).encode())
-					self.bufferi.remove(message)
-					logging.info('sent: %s to %s:%s.' % (line.rstrip(), self.address, self.port))
-				'''
-				# Read buffer:
-				data = self.sock.recv(8192).decode()
-				if not data: break
-				for line in data.split('\n'):
-					msg = line.split(' ')
-					if len(msg) <= 1: continue
-					if msg[0] == 'PING':
-						self.sock.sendall(('PONG %s' % msg[1]).encode())
-						continue #Alpha2todo Move to IRClib or microirc.
-					self.buffero.append(line.rstrip())
-					logging.info('received: %s from %s:%s.' % (line.rstrip(), self.address, self.port))
-			except:
-				logging.debug(traceback.format_exc())
-		sock.close()
-		return
-	def send(self, message):
-		self.sock.sendall('%s\n\r' % (message))
-		#logging.info('Sent %s to %s:%i.' % (message, self.address, self.port)) #Alpha2 TODO
-		return
+	def __IO(self):
+		try:
+			while True:
+				self.__buffero.append = text2chat(self.__read());
+				time.sleep(3/1000000.0);
+		except:
+			self.__sock.close()
+			return;
+		return;
+	def __read(self):
+		rv = self.__sock.recv(8192).decode();
+		return rv;
+	def __write(self, message):
+		rv = self.__sock.sendall('%s\n\r' % (message));
+		return rv;
+	def queue(self):
+		if(len(self.__buffero) <= 0):
+			time.sleep(3/1000000.0);
+			return;
+		else:
+			return self.__buffero.pop(0);
