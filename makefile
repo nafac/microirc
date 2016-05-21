@@ -1,10 +1,10 @@
 MODULES_CPP = g++ -O0 -ggdb -Werror -std=gnu++11
 MODULES_FINAL = mirccd.o Toolbox.o GenericNetworking.o mod_irc.o CommunicationServer.o CommunicationConnector.o
 
-all: ${MODULES_FINAL} SharpConnect
+all: ${MODULES_FINAL}
 	g++ ${MODULES_FINAL} -lpthread -o mirccd
-SharpConnect:
-	dmcs -out:SharpConnect src/SharpConnect.cs
+
+
 
 mirccd.o: src/mirccd.hpp src/mirccd.cpp
 	${MODULES_CPP} -c src/mirccd.cpp
@@ -20,5 +20,5 @@ mod_irc.o: src/modules/mod_irc.hpp src/modules/mod_irc.cpp
 	${MODULES_CPP} -c src/modules/mod_irc.cpp
 
 clean:
-	rm -Rf ${MODULES_FINAL} SharpConnect mirccd
+	rm -Rf ${MODULES_FINAL} mirccd
 

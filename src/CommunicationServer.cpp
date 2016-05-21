@@ -32,7 +32,7 @@ CommunicationServer::CommunicationServer() {
 	int i, rv;
 	fd_set active_fdset, read_fdset;
 	struct sockaddr_in clientname;
-	size_t size;
+	socklen_t size;
 	//
 	string reader;
 	Toolbox *disposable_tools = new Toolbox();
