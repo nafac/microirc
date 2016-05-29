@@ -51,7 +51,6 @@ CommunicationServer::CommunicationServer() {
 		}
 		// service
 		for(i = 0; i < FD_SETSIZE; ++i) {
-			// if(is_paused_fd(i)) continue; // does not work
 			if(FD_ISSET(i, &read_fdset)) {
 				// accept new clients from listener
 				if(i == fd) {
@@ -74,24 +73,13 @@ CommunicationServer::CommunicationServer() {
 					if (reader.length() < 5)
 						continue;
 					// IPC-Hub
-					//#Alpha7 IMPLEMENT PERL MODULE HOOKS + YAML
 					if (disposable_tools->Contains(reader, "NOTICE AUTH"))
 					{
-						// 1. create module
-						mod_irc *module_irc = new mod_irc();
-						// 1.1. pause I/O
-						paused_fds.push_back(i);
-						// 2. pair connectors
-						// 3. contain data
-						// 3.1. continue I/O
-
 						// printf("NOTICE AUTH DETECTED\n\r");
 						//#Alpha6TODO :: Implement ThreadDispatcher.
 						//#Alpha6TODO :: Add module hooks.
-						
-						// obsolete 
-						// mod_irc *module_irc = new mod_irc();
-						
+						// 
+						mod_irc *module_irc = new mod_irc();
 						//#Alpha6 :: do not close listener
 						// close(i);
 						// FD_CLR(i, &active_fdset);
@@ -360,16 +348,7 @@ int CommunicationServer::__process_dispatcher(void) {
 	}
 	return 0;
 }
-bool CommunicationServer::is_paused_fd(int fd) {
-	for(int i = 0; i < paused_fds.size(); i++) {
-		if(i == fd) {
-			// printf("CommunicationServer::is_paused_fd(%i) = true\n", fd); 
-			return true;
-		}
-	}
-	// printf("CommunicationServer::is_paused_fd(%i) = false\n", fd);
-	return false;
-}
+
 /*
 	struct timeval timeout;
 	int readsocks;
