@@ -25,10 +25,15 @@ int CommunicationConnector::__static_route_io(void)
 }
 int CommunicationConnector::__read()
 {
+	int rv = 0;
+	// conditional blocks using __select_socket_state works already, phew
+	if(router_one->__select_socket_state(router_one->get_fd()) > 0) router_one->__read(router_one->get_fd(), &rv);
 	return 0;
 }
-int CommunicationConnector::__write()
+int CommunicationConnector::__write(string text)
 {
+	int rv = 0;
+	router_one->__write(router_one->get_fd(), text);
 	return 0;
 }
 

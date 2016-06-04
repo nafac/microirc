@@ -13,5 +13,5 @@ public:
 	// 
 	int __static_route_io();
 	int __read();
-	int __write();
+	int __write(string text);
 };

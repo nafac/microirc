@@ -41,7 +41,10 @@ CommunicationServer::CommunicationServer() {
 	// 
 	FD_ZERO(&active_fdset);
 	FD_SET(fd, &active_fdset);
-	// 
+	// CRAP
+	int temp_id = -1;
+	bool temp_done = false;
+	//
 	while(1) {
 		read_fdset = active_fdset;
 		// block
@@ -75,15 +78,23 @@ CommunicationServer::CommunicationServer() {
 						continue;
 					// IPC-Hub
 					//#Alpha7 IMPLEMENT PERL MODULE HOOKS + YAML
-					if (disposable_tools->Contains(reader, "NOTICE AUTH"))
+					if (disposable_tools->Contains(reader, std::to_string(temp_id))) {
+						printf("identified, OK\n");
+					}
+					if (!temp_done && disposable_tools->Contains(reader, "NOTICE AUTH"))
 					{
+						// PROCESS DISPATCHER
 						// 1. create module
 						mod_irc *module_irc = new mod_irc();
+						temp_id = module_irc->connect(0);
+						printf("TEMP_ID=%i", temp_id);
 						// 1.1. pause I/O
 						paused_fds.push_back(i);
 						// 2. pair connectors
 						// 3. contain data
 						// 3.1. continue I/O
+						
+						temp_done = true;
 
 						// printf("NOTICE AUTH DETECTED\n\r");
 						//#Alpha6TODO :: Implement ThreadDispatcher.

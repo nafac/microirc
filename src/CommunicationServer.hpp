@@ -6,8 +6,10 @@ class CommunicationServer {
 	     CommunicationConnector bidirectional traffic container, do not expose.
 	*/
 	class ProcessDispatcher {
-		//
 	public:
+		ProcessDispatcher();
+		//
+	private:
 		//
 	};
 private:

@@ -284,7 +284,7 @@ int UniversalNetwork::__write(int active_id, string buffer) {
 	{
 		if(cmd[i].length() < 5)
 			continue;
-		rv = write(active_id, cmd[i].c_str(), cmd[i].length() - 1);
+		rv = write(active_id, cmd[i].c_str(), cmd[i].length());
 		if(rv < 0)
 			return -1;
 		counter += rv;
@@ -294,7 +294,7 @@ int UniversalNetwork::__write(int active_id, string buffer) {
 // I guess this is for the conditional blocks..
 //	.. yes I'ma drain your CPU.
 //		.. just because linux manuals are lying to me.
-/* //#Alpha6 :: OBSOLETED
+//#Alpha6 :: OBSOLETED
 int UniversalNetwork::__select_socket_state(int target_fd) {
 	//#Alpha5
 	struct timeval timeout;
@@ -309,7 +309,6 @@ int UniversalNetwork::__select_socket_state(int target_fd) {
 	//printf("__socket_state is looping on target_fd='%i' liaani='%i'\n\r", target_fd, liaani);
 	return liaani;
 }
-*/
 int UniversalNetwork::get_fd(void) {
 	return main_fd;
 }
