@@ -26,7 +26,7 @@ class ui_ncurses:
 		self.defaultpad.append('begin with /connect <nickname> <address>:<port>.')
 		
 		# required threads
-		# threading.Thread(target=self.update_io).start()
+		threading.Thread(target=self.update_io).start()
 		# optional threads; for modules and suchs #Alpha2todo HOOK!
 		#
 		
